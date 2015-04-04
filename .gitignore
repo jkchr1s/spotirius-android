@@ -7,5 +7,11 @@ ehthumbs.db
 Thumbs.db
 
 # Spotify client tokens
-#SpotifyClientConfig.java
-#app/src/main/java/com/booshaday/spotirius/data/SpotifyClientConfig.java
+
+# Android Studio
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
