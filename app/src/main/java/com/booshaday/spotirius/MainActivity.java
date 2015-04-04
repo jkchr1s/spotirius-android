@@ -21,16 +21,12 @@ import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
-import com.booshaday.spotirius.R;
 import com.booshaday.spotirius.app.ApplicationController;
 import com.booshaday.spotirius.data.AppConfig;
 import com.booshaday.spotirius.data.Constants;
-import com.booshaday.spotirius.data.SongItem;
 import com.booshaday.spotirius.data.SpotiriusChannel;
 import com.booshaday.spotirius.data.SqlHelper;
 import com.booshaday.spotirius.net.DogStarRadioClient;
-import com.booshaday.spotirius.net.SiriusChannel;
 import com.booshaday.spotirius.net.SpotifyClient;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
@@ -41,34 +37,19 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import kaaes.spotify.webapi.android.SpotifyApi;
-import kaaes.spotify.webapi.android.SpotifyService;
 
 
 public class MainActivity extends ActionBarActivity implements ConnectionStateCallback {
     private static final String TAG = "MainActivity";
-    private static String AUTH_TOKEN;
 
-    private ListView channelList;
-    private ListView songList;
-    private ArrayAdapter<String> channelListAdapter;
-    private ArrayAdapter<String> songListAdapter;
-    private ListView mChannelList;
-    private SiriusChannel sc;
     private SpotifyClient mSpotifyClient;
     private boolean mIsFirstLogin = false;
-    private SharedPreferences mSharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mSharedPreferences = getSharedPreferences(getResources().getString(R.string.prefs_key), Context.MODE_PRIVATE);
         mSpotifyClient = new SpotifyClient(getApplicationContext());
 
         // if user is not logged in, we need to auth them
@@ -129,13 +110,10 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
         switch(item.getItemId()) {
             case R.id.action_sync:
-                Toast.makeText(getApplicationContext(), "Sync started",
-                        Toast.LENGTH_SHORT).show();
-                //sc.sync();
+                Toast.makeText(getApplicationContext(), "Sync started", Toast.LENGTH_SHORT).show();
                 DogStarRadioClient client = new DogStarRadioClient(this.getApplicationContext());
                 client.sync();
                 return true;
@@ -200,10 +178,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
                         updateRefreshToken(response.getCode());
                         break;
 
-//                    case TOKEN:
-//                        updateRefreshToken(response.getCode());
-//                        break;
-
                     // Auth flow returned an error
                     case ERROR:
                         logStatus("Auth error: " + response.getError());
@@ -243,8 +217,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
                 alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         String value = input.getText().toString();
-                        // Do something with value!
-
                         mSpotifyClient.createPlaylist(value, new Response.Listener<JSONObject>() {
                             @Override
                             public void onResponse(JSONObject response) {

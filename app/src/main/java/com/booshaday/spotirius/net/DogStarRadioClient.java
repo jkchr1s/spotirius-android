@@ -2,16 +2,13 @@ package com.booshaday.spotirius.net;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.booshaday.spotirius.MainActivity;
 import com.booshaday.spotirius.R;
@@ -21,22 +18,10 @@ import com.booshaday.spotirius.data.Constants;
 import com.booshaday.spotirius.data.SpotiriusChannel;
 import com.booshaday.spotirius.data.SqlHelper;
 import com.booshaday.spotirius.view.ChannelPickerActivity;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,7 +34,6 @@ public class DogStarRadioClient {
     private static final String SEARCH_ARGS = "?artist=&title=&channel=%s&month=%d&date=%d&shour=&sampm=&stz=&ehour=&eampm=";
     private static final String SPOTIFY_API = "https://api.spotify.com/v1";
     private static final String TAG = "DogStarRadioClient";
-    private static final DefaultRetryPolicy RETRY_POLICY = new DefaultRetryPolicy(15000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
 
     private Context mContext;
 
@@ -67,23 +51,15 @@ public class DogStarRadioClient {
      * an activity that lets user pick a channel to add
      */
     public void addChannelByPicker() {
-        OkHttpClient client = new OkHttpClient();
+        String url = BASE_URL + SEARCH_URI;
 
-        Request request = new Request.Builder()
-                .url(BASE_URL + SEARCH_URI)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
+        StringRequest req = new StringRequest(url, new Response.Listener<String>() {
             @Override
-            public void onFailure(Request request, IOException e) {
-                Toast.makeText(mContext, "Channel lookup failed!", Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            public void onResponse(com.squareup.okhttp.Response response) throws IOException {
-                String result = response.body().string();
+            public void onResponse(String response) {
                 ArrayList<String> channels = new ArrayList<>();
                 ArrayList<String> descriptions = new ArrayList<>();
+
+                String result = new String(response.getBytes());
 
                 // extract the channels
                 Pattern re = Pattern.compile("<select name=channel>(.*?)<\\/select><\\/td>");
@@ -116,7 +92,15 @@ public class DogStarRadioClient {
                     Log.e(TAG, "channel lookup failed");
                 }
             }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(mContext, "Channel lookup failed!", Toast.LENGTH_LONG).show();
+            }
         });
+
+        // add the request object to the queue to be executed
+        ApplicationController.getInstance().addToRequestQueue(req);
     }
 
     public ArrayList<SpotiriusChannel> getChannels() {
@@ -142,14 +126,14 @@ public class DogStarRadioClient {
                     if (response.has("access_token")) {
                         // we got a new access token
                         // so far so good...
-                        Log.d(TAG+"_init", "got access token");
+                        Log.d(TAG + "_init", "got access token");
                         AppConfig.setAccessToken(mContext, response.getString("access_token"));
                         if (response.has("expires_in")) {
                             // we got the token expiration time
                             // let's get started
-                            Log.d(TAG+"_init", "got token expiration time");
-                            AppConfig.setExpiryTime(mContext, System.currentTimeMillis()/1000 + response.getLong("expires_in"));
-                            Log.d(TAG+"_init", "Spotify client initialized successfully");
+                            Log.d(TAG + "_init", "got token expiration time");
+                            AppConfig.setExpiryTime(mContext, System.currentTimeMillis() / 1000 + response.getLong("expires_in"));
+                            Log.d(TAG + "_init", "Spotify client initialized successfully");
                             startSync();
                         } else {
                             // we did not receive an expiration time, prompt user to launch app
@@ -197,7 +181,7 @@ public class DogStarRadioClient {
                         ChannelResponse,
                         ChannelErrorResponse
                 );
-                req.setRetryPolicy(RETRY_POLICY);
+                req.setRetryPolicy(Constants.RETRY_POLICY);
                 ApplicationController.getInstance().addToRequestQueue(req);
             }
         }
@@ -235,7 +219,7 @@ public class DogStarRadioClient {
                         String.format(BASE_URL+"/"+m.group(1)),
                         ChannelResponse,
                         ChannelErrorResponse
-                ).setRetryPolicy(RETRY_POLICY));
+                ).setRetryPolicy(Constants.RETRY_POLICY));
 
             }
 

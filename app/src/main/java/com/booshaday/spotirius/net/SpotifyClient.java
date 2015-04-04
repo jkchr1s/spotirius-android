@@ -1,17 +1,13 @@
 package com.booshaday.spotirius.net;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.net.Uri;
-import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.booshaday.spotirius.R;
@@ -21,14 +17,11 @@ import com.booshaday.spotirius.data.Constants;
 import com.booshaday.spotirius.data.SpotiriusChannel;
 import com.booshaday.spotirius.data.SqlHelper;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,56 +42,6 @@ public class SpotifyClient {
 
     public SpotifyClient(Context context) {
         this.mContext = context.getApplicationContext();
-        init();
-    }
-
-    private void init() {
-        if (!AppConfig.isValidSession(mContext)) {
-            Log.d(TAG+"_init", "no valid session found");
-            Toast.makeText(mContext, mContext.getString(R.string.new_session), Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        // user has had a valid session, so try to use the
-        // refresh token to authenticate
-        getAccessToken(new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                // try to refresh the token
-                try {
-                    if (response.has("access_token")) {
-                        // we got a new access token
-                        // so far so good...
-                        Log.d(TAG+"_init", "got access token");
-                        AppConfig.setAccessToken(mContext, response.getString("access_token"));
-                        if (response.has("expires_in")) {
-                            // we got the token expiration time
-                            // let's get started
-                            AppConfig.setExpiryTime(mContext, System.currentTimeMillis()/1000 + response.getLong("expires_in"));
-                        } else {
-                            // we did not receive an expiration time, prompt user to launch app
-                            // and log in again
-                            AppConfig.setExpiryTime(mContext, 0);
-                            Toast.makeText(mContext, mContext.getString(R.string.session_problem), Toast.LENGTH_LONG).show();
-                        }
-                    } else {
-                        // the response does not have an access token
-                        // ask user to launch app to log in again
-                        Toast.makeText(mContext, mContext.getString(R.string.session_problem), Toast.LENGTH_LONG).show();
-                    }
-                } catch (Exception e) {
-                    // there was a general exception, ask the user
-                    // to launch the app to log in again
-                    Toast.makeText(mContext, mContext.getString(R.string.session_expired), Toast.LENGTH_LONG).show();
-                }
-
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Toast.makeText(mContext, mContext.getString(R.string.session_expired), Toast.LENGTH_LONG).show();
-            }
-        });
     }
 
     /**
