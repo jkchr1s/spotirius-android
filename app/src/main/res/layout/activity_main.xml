@@ -1,0 +1,37 @@
+<LinearLayout
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_alignParentTop="true"
+    android:layout_alignParentLeft="true"
+    android:layout_alignParentStart="true"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+        <ListView
+            android:layout_width="214dp"
+            android:layout_height="match_parent"
+            android:id="@+id/channelList" />
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="2">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:text="Recent Activity"
+                android:id="@+id/textView" />
+
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:inputType="textMultiLine"
+                android:ems="10"
+                android:id="@+id/editText" />
+        </LinearLayout>
+
+
+    </LinearLayout>

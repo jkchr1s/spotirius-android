@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.squareup.okio/okio/1.0.0/2534c458682c73f5b9871131ab3098d3f987ca3/okio-1.0.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="02534c458682c73f5b9871131ab3098d3f987ca3">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/okio-1.0.0-c17ce1806f7cc27b8bbf0c0e001bf02750b7f297.jar" />
+    </item>
+    <item
+        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.squareup.retrofit/retrofit/1.9.0/a681c044244d9fc375198588297a39ba78028423/retrofit-1.9.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="a681c044244d9fc375198588297a39ba78028423">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/retrofit-1.9.0-364424b99466cd0767b8956cea0acccff8d3d38e.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.spotify.sdk/spotifysdk/1.0.0-beta8/classes.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="8797735652d1b8e4818be3dcc1c2f7f92d68795c">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-d90b54d8b61c4c344c2a1e50c90bce66ae4fd9a7.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/libs/spotify-web-api-android-0.1.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="9ade1d5e119d964341c89b8a51c22ba84d208996">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/spotify-web-api-android-0.1.0-8b64cf4526e166a7eee4a3b07ed87378e5cdaaa3.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/classes.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-5998b9a5686fb009c5828c6cf4fc0bb53b51665a.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.spotify.sdk/spotifysdk/1.0.0-beta8/libs/jnihelpers-1.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="c5d799bdcad99d28577d85564ddd5771702f5d1b">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/jnihelpers-1.0-0750a2e09b56fdba2811a48eebf787fd8e430127.jar" />
+    </item>
+    <item
+        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.mcxiaoke.volley/library/1.0.15/9093a362d18c5f81f58e49d86dece57d9b6e1cb7/library-1.0.15.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="9093a362d18c5f81f58e49d86dece57d9b6e1cb7">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/library-1.0.15-6e32cd806185d3ea0eb896be379ee61f1278c5df.jar" />
+    </item>
+    <item
+        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.squareup.okhttp/okhttp/2.0.0/4c8d1536dba3812cc1592090dc20c47a4ed3c35e/okhttp-2.0.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="4c8d1536dba3812cc1592090dc20c47a4ed3c35e">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/okhttp-2.0.0-cd838e53eaa10dce4fe49779742573acd00d5935.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/21.0.3/classes.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="81d42bf983a8741f4888a6e333e454e4a5e0eeb7">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-e7c143853f1cd14ee2679f3f220130707d0567d1.jar" />
+    </item>
+    <item
+        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.google.guava/guava/18.0/cce0823396aa693798f8882e64213b1772032b09/guava-18.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="cce0823396aa693798f8882e64213b1772032b09">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/guava-18.0-2f91672a3a817e5b9d7c3358ba9fd3c6c6789d9f.jar" />
+    </item>
+    <item
+        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.loopj.android/android-async-http/1.4.6/a845a88238be0b5be9d238652c1bc0605ef91f52/android-async-http-1.4.6.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="a845a88238be0b5be9d238652c1bc0605ef91f52">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/android-async-http-1.4.6-882b6685477eea9867b9c80f914996009d4e68d5.jar" />
+    </item>
+    <item
+        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.3.1/ecb6e1f8e4b0e84c4b886c2f14a1500caf309757/gson-2.3.1.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="ecb6e1f8e4b0e84c4b886c2f14a1500caf309757">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/gson-2.3.1-e238c5fa79c4c74620c900d42dc4f21a01dff56d.jar" />
+    </item>
+    <item
+        jar="/Applications/Android/sdk/extras/android/m2repository/com/android/support/support-annotations/21.0.3/support-annotations-21.0.3.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="4b74cefe1f0c1b819e7260c8627a14674e37fd35">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/support-annotations-21.0.3-2ac3d803eae57a761f1077cd4ef186cee6fb57bc.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/libs/internal_impl-21.0.3.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="01ec05bfbafcc07646ba813000bf2ef11742dd03">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/internal_impl-21.0.3-1610ff4372875b91940ef7d3368a8090adc7c731.jar" />
+    </item>
+    <item
+        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.squareup.okhttp/okhttp-urlconnection/2.0.0/afe8399d352713b66e597e9670c741d1e60ae923/okhttp-urlconnection-2.0.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="afe8399d352713b66e597e9670c741d1e60ae923">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/okhttp-urlconnection-2.0.0-f59361397a896e53547a910bdb6a97beb5f26c4d.jar" />
+    </item>
+
+</items>
