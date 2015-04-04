@@ -892,8 +892,8 @@
         <option value="$PROJECT_DIR$/app/src/main/java/com/booshaday/spotirius/net/SpotifyClient.java" />
         <option value="$PROJECT_DIR$/app/src/main/java/com/booshaday/spotirius/MainActivity.java" />
         <option value="$PROJECT_DIR$/app/src/main/java/com/booshaday/spotirius/net/DogStarRadioClient.java" />
-        <option value="$PROJECT_DIR$/app/src/main/java/com/booshaday/spotirius/data/SpotifyClientConfig.java" />
         <option value="$PROJECT_DIR$/app/src/main/java/com/booshaday/spotirius/data/Constants.java" />
+        <option value="$PROJECT_DIR$/app/src/main/java/com/booshaday/spotirius/data/SpotifyClientConfig.java" />
       </list>
     </option>
   </component>

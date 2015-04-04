@@ -1,0 +1,11 @@
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Spotify client tokens
+#SpotifyClientConfig.java
+#app/src/main/java/com/booshaday/spotirius/data/SpotifyClientConfig.java
