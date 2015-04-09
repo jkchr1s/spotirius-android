@@ -156,6 +156,13 @@ public class SqlHelper extends SQLiteOpenHelper {
         db.insert(TABLE_CHANNELS, null, cv);
     }
 
+    public int deleteIncompleteSongs() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String where = COLUMN_SONGS_ADDED+"=0";
+
+        return db.delete(TABLE_SONGS, where, null);
+    }
+
     public ArrayList<SongItem> getSongs(int channel) {
         SQLiteDatabase db = this.getReadableDatabase();
 

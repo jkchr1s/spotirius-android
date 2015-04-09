@@ -3,6 +3,7 @@ package com.booshaday.spotirius.net;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -36,6 +37,7 @@ public class DogStarRadioClient {
     private static final String TAG = "DogStarRadioClient";
 
     private Context mContext;
+    private boolean finished = false;
 
     /**
      * If accessing from GUI, pass the context of Activity
@@ -108,6 +110,17 @@ public class DogStarRadioClient {
         return db.getChannels();
     }
 
+    public void sendStopSignal() {
+        // cancel http requests
+        ApplicationController.getInstance().cancelPendingRequests(ApplicationController.TAG);
+
+        // delete incomplete songs
+        if (mContext.getApplicationContext()!=null) {
+            SqlHelper db = new SqlHelper(mContext.getApplicationContext());
+        }
+
+    }
+
     public void sync() {
         SpotifyClient client = new SpotifyClient(mContext.getApplicationContext());
         if (!AppConfig.isValidSession(mContext)) {
@@ -162,6 +175,14 @@ public class DogStarRadioClient {
                 Toast.makeText(mContext, mContext.getString(R.string.session_problem), Toast.LENGTH_LONG).show();
             }
         });
+
+        while (!finished) {
+            // sleep 15 seconds, then check to see if request queue is empty
+            SystemClock.sleep(15000);
+            Log.d(TAG, "checking if Volley queue is empty...");
+            if (ApplicationController.getInstance().isEmpty()) break;
+            Log.d(TAG, "queue is not empty, locking thread again...");
+        }
     }
 
     private void startSync() {

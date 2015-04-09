@@ -295,8 +295,4 @@ public class SpotifyClient {
         // add the request object to the queue to be executed
         ApplicationController.getInstance().addToRequestQueue(req);
     }
-
-
-
-
 }

@@ -31,7 +31,7 @@ public class ChannelPickerActivity extends Activity {
         mChannels = bundle.getStringArrayList("channels");
 
         mListView = (ListView) findViewById(R.id.channel_picker_listview);
-        mListViewAdapter = new ArrayAdapter<>(this, R.layout.channel_row, items);
+        mListViewAdapter = new ArrayAdapter<>(this, R.layout.channel_picker_row, items);
         mListView.setAdapter(mListViewAdapter);
 
         mListView.setClickable(true);

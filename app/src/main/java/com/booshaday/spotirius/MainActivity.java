@@ -28,6 +28,7 @@ import com.booshaday.spotirius.data.SpotiriusChannel;
 import com.booshaday.spotirius.data.SqlHelper;
 import com.booshaday.spotirius.net.DogStarRadioClient;
 import com.booshaday.spotirius.net.SpotifyClient;
+import com.booshaday.spotirius.service.SyncService;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
@@ -114,8 +115,10 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         switch(item.getItemId()) {
             case R.id.action_sync:
                 Toast.makeText(getApplicationContext(), "Sync started", Toast.LENGTH_SHORT).show();
-                DogStarRadioClient client = new DogStarRadioClient(this.getApplicationContext());
-                client.sync();
+//                DogStarRadioClient client = new DogStarRadioClient(this.getApplicationContext());
+//                client.sync();
+                Intent syncIntent = new Intent(this, SyncService.class);
+                startService(syncIntent);
                 return true;
 
             case R.id.action_login:
