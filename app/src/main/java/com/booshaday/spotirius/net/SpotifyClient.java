@@ -19,6 +19,7 @@ import com.booshaday.spotirius.data.SqlHelper;
 
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -149,18 +150,34 @@ public class SpotifyClient {
      * @param title = track title
      */
     public void addSongIfFound (final long dbId, final SpotiriusChannel channel, final String artist, final String title) {
-        String url = SPOTIFY_API + SPOTIFY_SEARCH;
+        String url = null;
+        try {
+            url = SPOTIFY_API + SPOTIFY_SEARCH
+                    + "?q=" + String.format("%s+artist:%s", URLEncoder.encode(title, Constants.URL_ENCODING), URLEncoder.encode(artist, Constants.URL_ENCODING))
+                    + "&type=track"
+                    + "&market=from_token"
+                    + "&limit=1";
+        } catch (UnsupportedEncodingException e) {
+            Log.d(TAG, "Song lookup failed: unable to build query parameters");
+            SqlHelper db = new SqlHelper(mContext.getApplicationContext());
+            db.deleteSong(dbId);
+        }
+//        Uri.Builder builder = Uri.parse(url).buildUpon();
 
-        Uri.Builder builder = Uri.parse(url).buildUpon();
-        builder.appendQueryParameter("q", String.format("%s+artist:%s", title, artist));
-        builder.appendQueryParameter("type", "track");
-        builder.appendQueryParameter("market", "from_token");
-        builder.appendQueryParameter("limit", "1");
+//        try {
+//            builder.appendQueryParameter("q", String.format("%s+artist:%s", URLEncoder.encode(title, Constants.URL_ENCODING), URLEncoder.encode(artist, Constants.URL_ENCODING)));
+//            builder.appendQueryParameter("type", "track");
+//            builder.appendQueryParameter("market", "from_token");
+//            builder.appendQueryParameter("limit", "1");
+//        } catch (UnsupportedEncodingException e) {
+//            Log.d(TAG, "Song lookup failed: unable to build query parameters");
+//            SqlHelper db = new SqlHelper(mContext.getApplicationContext());
+//            db.deleteSong(dbId);
+//        }
 
-        StringRequest req = new StringRequest(builder.build().toString(), new Response.Listener<String>() {
+        StringRequest req = new StringRequest(url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                ApplicationController.getInstance().requestCompleted();
                 SqlHelper db = new SqlHelper(mContext.getApplicationContext());
 
                 Pattern re = Pattern.compile(".*\\\"uri\\\" \\: \\\"(spotify\\:track:.*)\\\".*");
@@ -172,6 +189,7 @@ public class SpotifyClient {
                     // add song to queue
                     queueSong(dbId, channel, m.group(1), 0);
                 } else {
+                    //Log.d(TAG, "Song lookup failed (not found in response) "+new String(response.getBytes()));
                     Log.d(TAG, "Song lookup failed (not found in response)");
                     db.deleteSong(dbId);
                 }
@@ -181,7 +199,6 @@ public class SpotifyClient {
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                ApplicationController.getInstance().requestCompleted();
                 SqlHelper db = new SqlHelper(mContext.getApplicationContext());
                 db.deleteSong(dbId);
                 db.close();
@@ -210,7 +227,6 @@ public class SpotifyClient {
                     SqlHelper db = new SqlHelper(mContext);
                     db.setSongLoaded(dbId, true);
                     db.close();
-                    if (ApplicationController.getInstance().isEmpty()) Log.d(TAG, "queue is empty");
                 }
             }, new Response.ErrorListener() {
                 @Override
@@ -223,7 +239,6 @@ public class SpotifyClient {
                         SqlHelper db = new SqlHelper(mContext);
                         db.deleteSong(dbId);
                         db.close();
-                        if (ApplicationController.getInstance().isEmpty()) Log.d(TAG, "queue is empty");
                     }
                 }
             });

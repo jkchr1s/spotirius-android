@@ -2,6 +2,7 @@ package com.booshaday.spotirius.service;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -15,6 +16,7 @@ public class SyncService extends Service {
     private final String TAG = "SyncService";
     private final IBinder mBinder = new SyncBinder();
     private DogStarRadioClient mClient;
+    private boolean isRunning = false;
 
 //    public SyncService() {
 //        super("SyncService");
@@ -25,12 +27,21 @@ public class SyncService extends Service {
 //    }
 
     @Override
+    public void onCreate() {
+        if (isRunning) return;
+
+        isRunning = true;
+
+
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         //TODO do something useful
         Log.d(TAG, "onStartCommand");
         if (mClient==null)
             mClient = new DogStarRadioClient(getApplicationContext());
-        mClient.sync();
+        mClient.sync(intent);
         return Service.START_STICKY;
     }
 

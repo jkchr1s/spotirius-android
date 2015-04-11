@@ -66,7 +66,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         mSpotifyClient.getAccessToken(new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                ApplicationController.getInstance().requestCompleted();
                 try {
                     Log.d(TAG, response.toString(4));
                     if (response.has("access_token")) {
@@ -91,7 +90,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
-                    ApplicationController.getInstance().requestCompleted();
                     Toast.makeText(getApplicationContext(), "Your session has expired. Please log in again.", Toast.LENGTH_LONG).show();
                     openLoginWindow();
                 }
@@ -134,7 +132,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
                 mSpotifyClient.getPlaylists(new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        ApplicationController.getInstance().requestCompleted();
                         try {
                             Log.d(TAG, response.toString(4));
 
@@ -146,7 +143,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        ApplicationController.getInstance().requestCompleted();
                         Log.e(TAG, new String(error.networkResponse.data));
                     }
                 });
@@ -223,7 +219,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
                         mSpotifyClient.createPlaylist(value, new Response.Listener<JSONObject>() {
                             @Override
                             public void onResponse(JSONObject response) {
-                                ApplicationController.getInstance().requestCompleted();
                                 try {
                                     if (response.has("id")) {
                                         db.addChannel(String.valueOf(selectedChannel), response.getString("id"));
@@ -239,7 +234,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
                         }, new Response.ErrorListener() {
                             @Override
                             public void onErrorResponse(VolleyError error) {
-                                ApplicationController.getInstance().requestCompleted();
                                 Log.e(TAG, new String(error.networkResponse.data));
                             }
                         });
@@ -261,7 +255,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         mSpotifyClient.getMe(new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                ApplicationController.getInstance().requestCompleted();
                 try {
                     if (response.has("id")) {
                         AppConfig.setUsername(getApplicationContext(), response.getString("id"));
@@ -275,7 +268,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                ApplicationController.getInstance().requestCompleted();
                 Log.e(TAG, new String(error.networkResponse.data));
             }
         });
@@ -286,7 +278,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         mSpotifyClient.getRefreshToken(accessCode, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                ApplicationController.getInstance().requestCompleted();
                 try {
                     Context context = getApplicationContext();
                     if (response.has("access_token")) {
@@ -317,7 +308,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                ApplicationController.getInstance().requestCompleted();
                 Log.e(TAG, new String(error.networkResponse.data));
             }
         });

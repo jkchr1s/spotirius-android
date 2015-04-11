@@ -3,6 +3,7 @@ package com.booshaday.spotirius.net;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
@@ -23,6 +24,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,8 +38,10 @@ public class DogStarRadioClient {
     private static final String SEARCH_ARGS = "?artist=&title=&channel=%s&month=%d&date=%d&shour=&sampm=&stz=&ehour=&eampm=";
     private static final String SPOTIFY_API = "https://api.spotify.com/v1";
     private static final String TAG = "DogStarRadioClient";
+    private static final int POLL_INTERVAL = 5000;
 
     private Context mContext;
+    private Intent mIntent;
     private boolean finished = false;
 
     /**
@@ -121,7 +126,8 @@ public class DogStarRadioClient {
 
     }
 
-    public void sync() {
+    public void sync(Intent intent) {
+        mIntent = intent;
         SpotifyClient client = new SpotifyClient(mContext.getApplicationContext());
         if (!AppConfig.isValidSession(mContext)) {
             Log.d(TAG+"_init", "no valid session found");
@@ -175,14 +181,6 @@ public class DogStarRadioClient {
                 Toast.makeText(mContext, mContext.getString(R.string.session_problem), Toast.LENGTH_LONG).show();
             }
         });
-
-        while (!finished) {
-            // sleep 15 seconds, then check to see if request queue is empty
-            SystemClock.sleep(15000);
-            Log.d(TAG, "checking if Volley queue is empty...");
-            if (ApplicationController.getInstance().isEmpty()) break;
-            Log.d(TAG, "queue is not empty, locking thread again...");
-        }
     }
 
     private void startSync() {
@@ -206,12 +204,33 @@ public class DogStarRadioClient {
                 ApplicationController.getInstance().addToRequestQueue(req);
             }
         }
+
+        Log.d(TAG, "Starting service monitor...");
+        //Declare the timer
+        final Timer t = new Timer();
+        //Set the schedule function and rate
+        t.scheduleAtFixedRate(new TimerTask() {
+
+                  @Override
+                  public void run() {
+                      //Called each time when 1000 milliseconds (1 second) (the period parameter)
+                      if (ApplicationController.getInstance().isEmpty()) {
+                          Log.d(TAG, "Queue completed, stopping service");
+                          t.cancel();
+                          if (mContext!=null && mIntent!=null) {
+                              mContext.stopService(mIntent);
+                          }
+                      }
+                  }
+
+              },
+            POLL_INTERVAL,
+            POLL_INTERVAL);
     }
 
     private Response.ErrorListener ChannelErrorResponse = new Response.ErrorListener() {
         @Override
         public void onErrorResponse(VolleyError error) {
-            ApplicationController.getInstance().requestCompleted();
             VolleyLog.e("Error: ", error.getMessage());
             error.printStackTrace();
         }
@@ -220,7 +239,6 @@ public class DogStarRadioClient {
     private Response.Listener ChannelResponse = new Response.Listener<String>() {
         @Override
         public void onResponse(String response) {
-            ApplicationController.getInstance().requestCompleted();
             // get database instance
             SqlHelper db = new SqlHelper(mContext.getApplicationContext());
 
