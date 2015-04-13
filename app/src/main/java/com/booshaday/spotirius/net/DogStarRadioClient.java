@@ -15,6 +15,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.booshaday.spotirius.MainActivity;
 import com.booshaday.spotirius.R;
 import com.booshaday.spotirius.app.ApplicationController;
+import com.booshaday.spotirius.app.SpotiriusRequestQueue;
 import com.booshaday.spotirius.data.AppConfig;
 import com.booshaday.spotirius.data.Constants;
 import com.booshaday.spotirius.data.SpotiriusChannel;
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
 /**
  * Created by chris on 3/14/15.
  */
-public class DogStarRadioClient {
+public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete {
     private static final String BASE_URL = "http://www.dogstarradio.com";
     private static final String SEARCH_URI = "/search_playlist.php";
     private static final String SEARCH_ARGS = "?artist=&title=&channel=%s&month=%d&date=%d&shour=&sampm=&stz=&ehour=&eampm=";
@@ -184,6 +185,9 @@ public class DogStarRadioClient {
     }
 
     private void startSync() {
+        // set on sync complete callback
+        ApplicationController.getInstance().setOnQueueCompleteCallback(this);
+
         // get data from yesterday
         Calendar c = Calendar.getInstance();
         c.add(Calendar.DATE, -1);
@@ -204,28 +208,6 @@ public class DogStarRadioClient {
                 ApplicationController.getInstance().addToRequestQueue(req);
             }
         }
-
-        Log.d(TAG, "Starting service monitor...");
-        //Declare the timer
-        final Timer t = new Timer();
-        //Set the schedule function and rate
-        t.scheduleAtFixedRate(new TimerTask() {
-
-                  @Override
-                  public void run() {
-                      //Called each time when 1000 milliseconds (1 second) (the period parameter)
-                      if (ApplicationController.getInstance().isEmpty()) {
-                          Log.d(TAG, "Queue completed, stopping service");
-                          t.cancel();
-                          if (mContext!=null && mIntent!=null) {
-                              mContext.stopService(mIntent);
-                          }
-                      }
-                  }
-
-              },
-            POLL_INTERVAL,
-            POLL_INTERVAL);
     }
 
     private Response.ErrorListener ChannelErrorResponse = new Response.ErrorListener() {
@@ -266,10 +248,10 @@ public class DogStarRadioClient {
             re = Pattern.compile("<tr><td>(\\d+)<\\/td><td>(.*)<\\/td><td><a.*\">(.*)<\\/a><\\/td><td>\\d+\\/\\d+\\/\\d+<\\/td><td>\\d+\\:\\d+\\:\\d+ [A|P]M<\\/td><\\/tr>");
             m = re.matcher(response);
             while (m.find()) {
-                Log.v("Songs", String.format("Found song. channel: %s, artist: %s, title: %s", m.group(1), m.group(2), m.group(3)));
+                Log.v(TAG, String.format("Found song. channel: %s, artist: %s, title: %s", m.group(1), m.group(2), m.group(3)));
                 final long id = db.addSong(Integer.parseInt(m.group(1)), m.group(2), m.group(3));
                 if (id>0) {
-                    Log.v("SyncTask", String.format("Found new song: channel: %s, artist: %s, title: %s, dbId: %d", m.group(1), m.group(2), m.group(3), id));
+                    Log.v(TAG, String.format("Found new song: channel: %s, artist: %s, title: %s, dbId: %d", m.group(1), m.group(2), m.group(3), id));
 
                     SpotiriusChannel channel = db.getChannel(m.group(1));
                     if (channel!=null) {
@@ -284,4 +266,12 @@ public class DogStarRadioClient {
             db.close();
         }
     };
+
+    @Override
+    public void onQueueComplete() {
+        Log.d(TAG, "Queue completed, stopping service");
+        if (mContext!=null && mIntent!=null) {
+            mContext.stopService(mIntent);
+        }
+    }
 }

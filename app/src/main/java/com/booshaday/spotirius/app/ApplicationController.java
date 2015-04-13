@@ -105,6 +105,10 @@ public class ApplicationController extends Application {
         getRequestQueue().add(req);
     }
 
+    public void setOnQueueCompleteCallback(SpotiriusRequestQueue.OnQueueComplete callback) {
+        ((SpotiriusRequestQueue)getRequestQueue()).setOnQueueCompleteCallback(callback);
+    }
+
     /**
      * Cancels all pending requests by the specified TAG, it is important
      * to specify a TAG so that the pending/ongoing requests can be cancelled.

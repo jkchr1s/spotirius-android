@@ -162,18 +162,6 @@ public class SpotifyClient {
             SqlHelper db = new SqlHelper(mContext.getApplicationContext());
             db.deleteSong(dbId);
         }
-//        Uri.Builder builder = Uri.parse(url).buildUpon();
-
-//        try {
-//            builder.appendQueryParameter("q", String.format("%s+artist:%s", URLEncoder.encode(title, Constants.URL_ENCODING), URLEncoder.encode(artist, Constants.URL_ENCODING)));
-//            builder.appendQueryParameter("type", "track");
-//            builder.appendQueryParameter("market", "from_token");
-//            builder.appendQueryParameter("limit", "1");
-//        } catch (UnsupportedEncodingException e) {
-//            Log.d(TAG, "Song lookup failed: unable to build query parameters");
-//            SqlHelper db = new SqlHelper(mContext.getApplicationContext());
-//            db.deleteSong(dbId);
-//        }
 
         StringRequest req = new StringRequest(url, new Response.Listener<String>() {
             @Override

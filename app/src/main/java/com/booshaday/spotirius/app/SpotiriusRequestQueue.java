@@ -17,6 +17,7 @@ import com.android.volley.VolleyLog;
 public class SpotiriusRequestQueue extends RequestQueue {
     private static final String TAG = "SpotiriusRequestQueue";
     private int queueCount = 0;
+    private OnQueueComplete mCallback;
 
     public SpotiriusRequestQueue(Cache cache, Network network, int threadPoolSize, ResponseDelivery delivery) {
         super(cache, network, threadPoolSize, delivery);
@@ -63,14 +64,23 @@ public class SpotiriusRequestQueue extends RequestQueue {
     }
 
     private void removeFromQueueCount() {
-        Log.d(TAG, "removing item from queue");
         queueCount = queueCount - 1;
-        Log.d(TAG, "queueCount: "+String.valueOf(queueCount));
+
+        if (queueCount==0 && mCallback!=null) {
+            mCallback.onQueueComplete();
+            mCallback = null;
+        }
     }
 
     private void addToQueueCount() {
-        Log.d(TAG, "adding item to queue");
         queueCount = queueCount + 1;
-        Log.d(TAG, "queueCount: "+String.valueOf(queueCount));
+    }
+
+    public void setOnQueueCompleteCallback(OnQueueComplete callback) {
+        mCallback = callback;
+    }
+
+    public interface OnQueueComplete {
+        void onQueueComplete();
     }
 }
