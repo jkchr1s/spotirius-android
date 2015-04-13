@@ -115,6 +115,33 @@ public class SpotifyClient {
         ApplicationController.getInstance().addToRequestQueue(req);
     }
 
+    public void getPlaylist(String playlistId, Response.Listener success, Response.ErrorListener failure) {
+        if (!AppConfig.isValidSession(mContext)) {
+            failure.onErrorResponse(new VolleyError("Invalid Spotify session data"));
+            return;
+        }
+
+        String url = SPOTIFY_API
+                + SPOTIFY_USER
+                + "/" + AppConfig.getUsername(mContext)
+                + SPOTIFY_PLAYLISTS
+                + "/" + playlistId;
+
+        // set up request
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, success, failure) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Authorization", "Bearer "+AppConfig.getAccessToken(mContext));
+
+                return params;
+            }
+        };
+
+        // add the request object to the queue to be executed
+        ApplicationController.getInstance().addToRequestQueue(req);
+    }
+
     public void getPlaylists(Response.Listener success, Response.ErrorListener failure) {
         if (!AppConfig.isValidSession(mContext)) {
             failure.onErrorResponse(new VolleyError("Invalid Spotify session data"));

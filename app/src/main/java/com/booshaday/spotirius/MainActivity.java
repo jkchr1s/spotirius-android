@@ -32,7 +32,6 @@ import com.booshaday.spotirius.service.SyncService;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
-import com.spotify.sdk.android.playback.ConnectionStateCallback;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,7 +39,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 
 
-public class MainActivity extends ActionBarActivity implements ConnectionStateCallback {
+public class MainActivity extends ActionBarActivity {
     private static final String TAG = "MainActivity";
 
     private SpotifyClient mSpotifyClient;
@@ -315,36 +314,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
 
     private void logStatus(String message) {
         Log.d("SpotifyAPI", message);
-    }
-
-    @Override
-    public void onLoggedIn() {
-        Log.d("SpotifyAPI", "User logged in");
-        Toast.makeText(this, "Login success", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onLoggedOut() {
-        Log.d("SpotifyAPI", "User logged out");
-        Toast.makeText(this, "Logout success", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onLoginFailed(Throwable error) {
-        Log.d("SpotifyAPI", "Login failed");
-        Toast.makeText(this, "Login failed", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onTemporaryError() {
-        Log.d("SpotifyAPI", "Temporary error occurred");
-        Toast.makeText(this, "Temporary error", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onConnectionMessage(String message) {
-        Log.d("MainActivity", "Received connection message: " + message);
-        Toast.makeText(this, "Connection message: "+message, Toast.LENGTH_LONG).show();
     }
 
     private void updateChannelsList() {
