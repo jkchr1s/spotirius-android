@@ -146,6 +146,12 @@ public class SqlHelper extends SQLiteOpenHelper {
         return channels;
     }
 
+    public boolean deleteChannel(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        return db.delete(TABLE_CHANNELS, COLUMN_CHANNELS_ID + "=" + String.valueOf(id), null) > 0;
+    }
+
     public void addChannel(String channel, String playlistUri) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
