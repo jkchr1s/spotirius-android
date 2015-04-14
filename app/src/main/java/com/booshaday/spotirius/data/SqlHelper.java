@@ -146,6 +146,12 @@ public class SqlHelper extends SQLiteOpenHelper {
         return channels;
     }
 
+    public boolean deleteChannel(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        return db.delete(TABLE_CHANNELS, COLUMN_CHANNELS_ID + "=" + String.valueOf(id), null) > 0;
+    }
+
     public void addChannel(String channel, String playlistUri) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -154,6 +160,13 @@ public class SqlHelper extends SQLiteOpenHelper {
         cv.put(COLUMN_CHANNELS_PLAYLIST, playlistUri);
 
         db.insert(TABLE_CHANNELS, null, cv);
+    }
+
+    public int deleteIncompleteSongs() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String where = COLUMN_SONGS_ADDED+"=0";
+
+        return db.delete(TABLE_SONGS, where, null);
     }
 
     public ArrayList<SongItem> getSongs(int channel) {

@@ -1,6 +1,7 @@
 package com.booshaday.spotirius;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -28,22 +30,27 @@ import com.booshaday.spotirius.data.SpotiriusChannel;
 import com.booshaday.spotirius.data.SqlHelper;
 import com.booshaday.spotirius.net.DogStarRadioClient;
 import com.booshaday.spotirius.net.SpotifyClient;
+import com.booshaday.spotirius.service.SyncService;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
-import com.spotify.sdk.android.playback.ConnectionStateCallback;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
-public class MainActivity extends ActionBarActivity implements ConnectionStateCallback {
+public class MainActivity extends ActionBarActivity {
     private static final String TAG = "MainActivity";
+    private final Context mContext = this;
 
     private SpotifyClient mSpotifyClient;
     private boolean mIsFirstLogin = false;
+    private Map<String, String> mPlaylists;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +72,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         mSpotifyClient.getAccessToken(new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                ApplicationController.getInstance().requestCompleted();
                 try {
                     Log.d(TAG, response.toString(4));
                     if (response.has("access_token")) {
@@ -90,7 +96,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
-                    ApplicationController.getInstance().requestCompleted();
                     Toast.makeText(getApplicationContext(), "Your session has expired. Please log in again.", Toast.LENGTH_LONG).show();
                     openLoginWindow();
                 }
@@ -114,8 +119,8 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         switch(item.getItemId()) {
             case R.id.action_sync:
                 Toast.makeText(getApplicationContext(), "Sync started", Toast.LENGTH_SHORT).show();
-                DogStarRadioClient client = new DogStarRadioClient(this.getApplicationContext());
-                client.sync();
+                Intent syncIntent = new Intent(this, SyncService.class);
+                startService(syncIntent);
                 return true;
 
             case R.id.action_login:
@@ -128,23 +133,29 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
                 return true;
 
             case R.id.action_playlist_picker:
-                mSpotifyClient.getPlaylists(new Response.Listener<JSONObject>() {
+//                mSpotifyClient.getPlaylists(new Response.Listener<JSONObject>() {
+//                    @Override
+//                    public void onResponse(JSONObject response) {
+//                        try {
+//                            Log.d(TAG, response.toString(4));
+//
+//                        } catch (Exception e) {
+//                            Log.e(TAG, "Error parsing JSON response");
+//                        }
+//
+//                    }
+//                }, new Response.ErrorListener() {
+//                    @Override
+//                    public void onErrorResponse(VolleyError error) {
+//                        Log.e(TAG, new String(error.networkResponse.data));
+//                    }
+//                });
+                mSpotifyClient.getPlaylists(new SpotifyClient.OnPlaylistComplete() {
                     @Override
-                    public void onResponse(JSONObject response) {
-                        ApplicationController.getInstance().requestCompleted();
-                        try {
-                            Log.d(TAG, response.toString(4));
-
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error parsing JSON response");
+                    public void onPlaylistComplete(Map<String, String> playlists) {
+                        for (Map.Entry<String, String> item : playlists.entrySet()) {
+                            Log.d(TAG, item.getKey() + ": " + item.getValue());
                         }
-
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        ApplicationController.getInstance().requestCompleted();
-                        Log.e(TAG, new String(error.networkResponse.data));
                     }
                 });
                 return true;
@@ -203,62 +214,124 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
 
                 final String selectedChannel = String.valueOf(resultCode);
 
-                // TODO: remove static playlist value
-                AlertDialog.Builder alert = new AlertDialog.Builder(this);
+                if (mPlaylists==null) {
+                    // we haven't loaded any playlists or no playlists exist
+                    displayNewPlaylistDialog(String.valueOf(resultCode));
+                } else {
+                    // prompt to add new playlist or add to existing
+                    AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+                    alertDialog.setTitle("Sync Target");
+                    alertDialog.setMessage("Would you like to create a new playlist or sync with an existing one?");
 
-                alert.setTitle("Create Playlist");
-                alert.setMessage("Destination playlist name:");
+                    final String selected = String.valueOf(resultCode);
 
-                // Set an EditText view to get user input
-                final EditText input = new EditText(this);
-                input.setText("Spotirius "+String.valueOf(resultCode));
-                alert.setView(input);
+                    alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "New", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            displayNewPlaylistDialog(selected);
+                        } });
 
-                alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        String value = input.getText().toString();
-                        mSpotifyClient.createPlaylist(value, new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response) {
-                                ApplicationController.getInstance().requestCompleted();
-                                try {
-                                    if (response.has("id")) {
-                                        db.addChannel(String.valueOf(selectedChannel), response.getString("id"));
-                                        Toast.makeText(getApplicationContext(), "Channel added", Toast.LENGTH_SHORT).show();
-                                    } else {
-                                        Toast.makeText(getApplicationContext(), "Unable to determine playlist id", Toast.LENGTH_SHORT).show();
+                    alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // just close the dialog
+                        }});
+
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Existing", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            final AlertDialog.Builder alert = new AlertDialog.Builder(mContext);
+                            List<String> list = new ArrayList<>();
+
+                            for (Map.Entry<String, String> item : mPlaylists.entrySet()) {
+                                list.add(item.getValue());
+                            }
+
+                            final ArrayAdapter<String> playlistAdapter = new ArrayAdapter<String>(getBaseContext(), R.layout.channel_picker_row, list);
+                            alert.setAdapter(playlistAdapter, new DialogInterface.OnClickListener() {
+
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    int i = 0;
+                                    for (Map.Entry<String, String> item : mPlaylists.entrySet()) {
+                                        if (i==which) {
+                                            Toast.makeText(mContext, item.getValue(), Toast.LENGTH_SHORT).show();
+                                            SqlHelper db = new SqlHelper(getApplicationContext());
+                                            db.addChannel(selectedChannel, item.getKey());
+                                            db.close();
+                                            Toast.makeText(getApplicationContext(), "Channel added", Toast.LENGTH_SHORT).show();
+                                            updateChannelsList();
+                                            break;
+                                        } else {
+                                            i++;
+                                        }
                                     }
-                                } catch (Exception e) {
-                                    Log.e(TAG, "error parsing JSON response");
                                 }
+                            });
 
-                            }
-                        }, new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                ApplicationController.getInstance().requestCompleted();
-                                Log.e(TAG, new String(error.networkResponse.data));
-                            }
-                        });
-                    }
-                });
-
-                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        // Canceled.
-                    }
-                });
-
-                alert.show();
+                            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int whichButton) {
+                                    // Canceled.
+                                }
+                            });
+                            alert.show();
+                        }});
+                    alertDialog.show();
+                }
                 break;
         }
+    }
+
+    private void displayNewPlaylistDialog(final String resultCode) {
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setTitle("Create Playlist");
+        alert.setMessage("Destination playlist name:");
+
+        // Set an EditText view to get user input
+        final EditText input = new EditText(this);
+        input.setText("Spotirius "+resultCode);
+        alert.setView(input);
+
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                String value = input.getText().toString();
+                mSpotifyClient.createPlaylist(value, new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            if (response.has("id")) {
+                                SqlHelper db = new SqlHelper(getApplicationContext());
+                                db.addChannel(String.valueOf(resultCode), response.getString("id"));
+                                db.close();
+                                Toast.makeText(getApplicationContext(), "Channel added", Toast.LENGTH_SHORT).show();
+                                updateChannelsList();
+                            } else {
+                                Toast.makeText(getApplicationContext(), "Unable to determine playlist id", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "error parsing JSON response");
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG, new String(error.networkResponse.data));
+                    }
+                });
+            }
+        });
+
+        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                // Canceled.
+            }
+        });
+
+        alert.show();
     }
 
     private void getMe() {
         mSpotifyClient.getMe(new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                ApplicationController.getInstance().requestCompleted();
                 try {
                     if (response.has("id")) {
                         AppConfig.setUsername(getApplicationContext(), response.getString("id"));
@@ -272,7 +345,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                ApplicationController.getInstance().requestCompleted();
                 Log.e(TAG, new String(error.networkResponse.data));
             }
         });
@@ -283,7 +355,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         mSpotifyClient.getRefreshToken(accessCode, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                ApplicationController.getInstance().requestCompleted();
                 try {
                     Context context = getApplicationContext();
                     if (response.has("access_token")) {
@@ -314,7 +385,6 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                ApplicationController.getInstance().requestCompleted();
                 Log.e(TAG, new String(error.networkResponse.data));
             }
         });
@@ -324,42 +394,45 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
         Log.d("SpotifyAPI", message);
     }
 
-    @Override
-    public void onLoggedIn() {
-        Log.d("SpotifyAPI", "User logged in");
-        Toast.makeText(this, "Login success", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onLoggedOut() {
-        Log.d("SpotifyAPI", "User logged out");
-        Toast.makeText(this, "Logout success", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onLoginFailed(Throwable error) {
-        Log.d("SpotifyAPI", "Login failed");
-        Toast.makeText(this, "Login failed", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onTemporaryError() {
-        Log.d("SpotifyAPI", "Temporary error occurred");
-        Toast.makeText(this, "Temporary error", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onConnectionMessage(String message) {
-        Log.d("MainActivity", "Received connection message: " + message);
-        Toast.makeText(this, "Connection message: "+message, Toast.LENGTH_LONG).show();
-    }
-
     private void updateChannelsList() {
-        SqlHelper db = new SqlHelper(this);
-        ArrayList<SpotiriusChannel> channels = db.getChannels();
-        ChannelsAdapter adapter = new ChannelsAdapter(this, channels);
-        ListView listView = (ListView) findViewById(R.id.channelList);
-        listView.setAdapter(adapter);
+        mSpotifyClient.getPlaylists(new SpotifyClient.OnPlaylistComplete() {
+            @Override
+            public void onPlaylistComplete(Map<String, String> playlists) {
+                mPlaylists = playlists;
+                SqlHelper db = new SqlHelper(getApplicationContext());
+                final ArrayList<SpotiriusChannel> channels = db.getChannels();
+                for (SpotiriusChannel channel : channels) {
+                    if (playlists.containsKey(channel.getPlaylist()))
+                        channel.setPlaylistName(playlists.get(channel.getPlaylist()));
+                }
+                ChannelsAdapter adapter = new ChannelsAdapter(mContext, channels);
+                final ListView listView = (ListView) findViewById(R.id.channelList);
+                listView.setAdapter(adapter);
+                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    public void onItemClick(AdapterView<?> parent, View view,
+                                            final int position, long id) {
+                        new AlertDialog.Builder(mContext)
+                            .setTitle("Remove Channel")
+                            .setMessage("Are you sure you want to delete channel "+channels.get(position).getChannel()+"?")
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+                                public void onClick(DialogInterface dialog, int whichButton) {
+                                    SqlHelper db = new SqlHelper(getApplicationContext());
+                                    if (db.deleteChannel(channels.get(position).getId()))
+                                        updateChannelsList();
+                                    else
+                                        Toast.makeText(getApplicationContext(), "Unable to delete channel!", Toast.LENGTH_LONG).show();
+                                }})
+                            .setNegativeButton(android.R.string.no, null).show();
+                    }
+                });
+
+
+            }
+        });
+
+
     }
 
     public class ChannelsAdapter extends ArrayAdapter<SpotiriusChannel> {
@@ -379,8 +452,8 @@ public class MainActivity extends ActionBarActivity implements ConnectionStateCa
             TextView title = (TextView) convertView.findViewById(R.id.item_title);
             TextView desc = (TextView) convertView.findViewById(R.id.item_desc);
             // Populate the data into the template view using the data object
-            title.setText("Channel "+channel.getChannel());
-            desc.setText(channel.getPlaylist());
+            desc.setText("Satellite channel "+channel.getChannel());
+            title.setText(channel.getPlaylistName());
             // Return the completed view to render on screen
             return convertView;
         }

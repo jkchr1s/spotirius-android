@@ -3,6 +3,8 @@ package com.booshaday.spotirius.net;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -13,6 +15,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.booshaday.spotirius.MainActivity;
 import com.booshaday.spotirius.R;
 import com.booshaday.spotirius.app.ApplicationController;
+import com.booshaday.spotirius.app.SpotiriusRequestQueue;
 import com.booshaday.spotirius.data.AppConfig;
 import com.booshaday.spotirius.data.Constants;
 import com.booshaday.spotirius.data.SpotiriusChannel;
@@ -22,20 +25,25 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Created by chris on 3/14/15.
  */
-public class DogStarRadioClient {
+public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete {
     private static final String BASE_URL = "http://www.dogstarradio.com";
     private static final String SEARCH_URI = "/search_playlist.php";
     private static final String SEARCH_ARGS = "?artist=&title=&channel=%s&month=%d&date=%d&shour=&sampm=&stz=&ehour=&eampm=";
     private static final String SPOTIFY_API = "https://api.spotify.com/v1";
     private static final String TAG = "DogStarRadioClient";
+    private static final int POLL_INTERVAL = 5000;
 
     private Context mContext;
+    private Intent mIntent;
+    private boolean finished = false;
 
     /**
      * If accessing from GUI, pass the context of Activity
@@ -108,7 +116,19 @@ public class DogStarRadioClient {
         return db.getChannels();
     }
 
-    public void sync() {
+    public void sendStopSignal() {
+        // cancel http requests
+        ApplicationController.getInstance().cancelPendingRequests(ApplicationController.TAG);
+
+        // delete incomplete songs
+        if (mContext.getApplicationContext()!=null) {
+            SqlHelper db = new SqlHelper(mContext.getApplicationContext());
+        }
+
+    }
+
+    public void sync(Intent intent) {
+        mIntent = intent;
         SpotifyClient client = new SpotifyClient(mContext.getApplicationContext());
         if (!AppConfig.isValidSession(mContext)) {
             Log.d(TAG+"_init", "no valid session found");
@@ -165,6 +185,9 @@ public class DogStarRadioClient {
     }
 
     private void startSync() {
+        // set on sync complete callback
+        ApplicationController.getInstance().setOnQueueCompleteCallback(this);
+
         // get data from yesterday
         Calendar c = Calendar.getInstance();
         c.add(Calendar.DATE, -1);
@@ -190,7 +213,6 @@ public class DogStarRadioClient {
     private Response.ErrorListener ChannelErrorResponse = new Response.ErrorListener() {
         @Override
         public void onErrorResponse(VolleyError error) {
-            ApplicationController.getInstance().requestCompleted();
             VolleyLog.e("Error: ", error.getMessage());
             error.printStackTrace();
         }
@@ -199,7 +221,6 @@ public class DogStarRadioClient {
     private Response.Listener ChannelResponse = new Response.Listener<String>() {
         @Override
         public void onResponse(String response) {
-            ApplicationController.getInstance().requestCompleted();
             // get database instance
             SqlHelper db = new SqlHelper(mContext.getApplicationContext());
 
@@ -227,10 +248,10 @@ public class DogStarRadioClient {
             re = Pattern.compile("<tr><td>(\\d+)<\\/td><td>(.*)<\\/td><td><a.*\">(.*)<\\/a><\\/td><td>\\d+\\/\\d+\\/\\d+<\\/td><td>\\d+\\:\\d+\\:\\d+ [A|P]M<\\/td><\\/tr>");
             m = re.matcher(response);
             while (m.find()) {
-                Log.v("Songs", String.format("Found song. channel: %s, artist: %s, title: %s", m.group(1), m.group(2), m.group(3)));
+                Log.v(TAG, String.format("Found song. channel: %s, artist: %s, title: %s", m.group(1), m.group(2), m.group(3)));
                 final long id = db.addSong(Integer.parseInt(m.group(1)), m.group(2), m.group(3));
                 if (id>0) {
-                    Log.v("SyncTask", String.format("Found new song: channel: %s, artist: %s, title: %s, dbId: %d", m.group(1), m.group(2), m.group(3), id));
+                    Log.v(TAG, String.format("Found new song: channel: %s, artist: %s, title: %s, dbId: %d", m.group(1), m.group(2), m.group(3), id));
 
                     SpotiriusChannel channel = db.getChannel(m.group(1));
                     if (channel!=null) {
@@ -245,4 +266,12 @@ public class DogStarRadioClient {
             db.close();
         }
     };
+
+    @Override
+    public void onQueueComplete() {
+        Log.d(TAG, "Queue completed, stopping service");
+        if (mContext!=null && mIntent!=null) {
+            mContext.stopService(mIntent);
+        }
+    }
 }

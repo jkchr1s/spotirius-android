@@ -1,7 +1,6 @@
 package com.booshaday.spotirius.net;
 
 import android.content.Context;
-import android.net.Uri;
 import android.util.Log;
 
 import com.android.volley.AuthFailureError;
@@ -17,8 +16,10 @@ import com.booshaday.spotirius.data.Constants;
 import com.booshaday.spotirius.data.SpotiriusChannel;
 import com.booshaday.spotirius.data.SqlHelper;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +38,8 @@ public class SpotifyClient {
     private static final String SPOTIFY_SEARCH = "/search";
     private static final String SPOTIFY_AUTHORIZE = "https://accounts.spotify.com/authorize";
     private static final String SPOTIFY_TOKEN = "https://accounts.spotify.com/api/token";
+    private Map<String, String> mPlaylists;
+    private OnPlaylistComplete mOnPlaylistComplete;
 
     private Context mContext;
 
@@ -114,7 +117,7 @@ public class SpotifyClient {
         ApplicationController.getInstance().addToRequestQueue(req);
     }
 
-    public void getPlaylists(Response.Listener success, Response.ErrorListener failure) {
+    public void getPlaylist(String playlistId, Response.Listener success, Response.ErrorListener failure) {
         if (!AppConfig.isValidSession(mContext)) {
             failure.onErrorResponse(new VolleyError("Invalid Spotify session data"));
             return;
@@ -123,10 +126,136 @@ public class SpotifyClient {
         String url = SPOTIFY_API
                 + SPOTIFY_USER
                 + "/" + AppConfig.getUsername(mContext)
-                + SPOTIFY_PLAYLISTS;
+                + SPOTIFY_PLAYLISTS
+                + "/" + playlistId;
 
         // set up request
         JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, success, failure) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Authorization", "Bearer "+AppConfig.getAccessToken(mContext));
+
+                return params;
+            }
+        };
+
+        // add the request object to the queue to be executed
+        ApplicationController.getInstance().addToRequestQueue(req);
+    }
+
+    private void getPlaylistsPage(String url) {
+        if (!AppConfig.isValidSession(mContext)) {
+            throw new UnsupportedOperationException("Invalid user session");
+        }
+
+        // set up request
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    if (mPlaylists==null) mPlaylists = new HashMap<>();
+                    if (response.getJSONArray("items")!=null) {
+                        int i;
+                        int max = response.getJSONArray("items").length();
+                        for (i=0; i<max; i++) {
+                            try {
+                                JSONObject item = (JSONObject)response.getJSONArray("items").get(i);
+                                mPlaylists.put(item.getString("id"), item.getString("name"));
+                            } catch (Exception e) {
+                                Log.w(TAG, "Error parsing JSONObject");
+                            }
+                        }
+                    }
+
+                    if (response.isNull("next") || response.get("next").equals(null) ||
+                            response.getString("next").equals(JSONObject.NULL)) {
+                        // do callback
+                        if (mOnPlaylistComplete!=null) {
+                            mOnPlaylistComplete.onPlaylistComplete(mPlaylists);
+                            mPlaylists = null;
+                            mOnPlaylistComplete = null;
+                        }
+                    } else {
+                        // load next page
+                        getPlaylistsPage(response.getString("next"));
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d(TAG, "Error loading playlists: "+new String(error.networkResponse.data));
+            }
+        }) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Authorization", "Bearer "+AppConfig.getAccessToken(mContext));
+
+                return params;
+            }
+        };
+
+        // add the request object to the queue to be executed
+        ApplicationController.getInstance().addToRequestQueue(req);
+    }
+
+    public void getPlaylists(OnPlaylistComplete onPlaylistComplete) {
+        if (!AppConfig.isValidSession(mContext)) {
+            throw new UnsupportedOperationException("Invalid user session");
+        }
+
+        mOnPlaylistComplete = onPlaylistComplete;
+
+        String url = SPOTIFY_API
+                + SPOTIFY_USER
+                + "/" + AppConfig.getUsername(mContext)
+                + SPOTIFY_PLAYLISTS
+                + "?limit=50";
+
+        // set up request
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    if (mPlaylists==null) mPlaylists = new HashMap<>();
+                    if (response.getJSONArray("items")!=null) {
+                        int i;
+                        int max = response.getJSONArray("items").length();
+                        for (i=0; i<max; i++) {
+                            try {
+                                JSONObject item = (JSONObject)response.getJSONArray("items").get(i);
+                                mPlaylists.put(item.getString("id"), item.getString("name"));
+                            } catch (Exception e) {
+                                Log.w(TAG, "Error parsing JSONObject");
+                            }
+                        }
+                    }
+
+                    if (response.isNull("next") || response.get("next").equals(null) ||
+                            response.getString("next").equals(JSONObject.NULL)) {
+                        if (mOnPlaylistComplete!=null) {
+                            mOnPlaylistComplete.onPlaylistComplete(mPlaylists);
+                            mPlaylists = null;
+                            mOnPlaylistComplete = null;
+                        }
+                    } else {
+                        // load next page
+                        getPlaylistsPage(response.getString("next"));
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d(TAG, "Error loading playlists: "+new String(error.networkResponse.data));
+            }
+        }) {
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 Map<String, String> params = new HashMap<String, String>();
@@ -149,18 +278,22 @@ public class SpotifyClient {
      * @param title = track title
      */
     public void addSongIfFound (final long dbId, final SpotiriusChannel channel, final String artist, final String title) {
-        String url = SPOTIFY_API + SPOTIFY_SEARCH;
+        String url = null;
+        try {
+            url = SPOTIFY_API + SPOTIFY_SEARCH
+                    + "?q=" + String.format("%s+artist:%s", URLEncoder.encode(title, Constants.URL_ENCODING), URLEncoder.encode(artist, Constants.URL_ENCODING))
+                    + "&type=track"
+                    + "&market=from_token"
+                    + "&limit=1";
+        } catch (UnsupportedEncodingException e) {
+            Log.d(TAG, "Song lookup failed: unable to build query parameters");
+            SqlHelper db = new SqlHelper(mContext.getApplicationContext());
+            db.deleteSong(dbId);
+        }
 
-        Uri.Builder builder = Uri.parse(url).buildUpon();
-        builder.appendQueryParameter("q", String.format("%s+artist:%s", title, artist));
-        builder.appendQueryParameter("type", "track");
-        builder.appendQueryParameter("market", "from_token");
-        builder.appendQueryParameter("limit", "1");
-
-        StringRequest req = new StringRequest(builder.build().toString(), new Response.Listener<String>() {
+        StringRequest req = new StringRequest(url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                ApplicationController.getInstance().requestCompleted();
                 SqlHelper db = new SqlHelper(mContext.getApplicationContext());
 
                 Pattern re = Pattern.compile(".*\\\"uri\\\" \\: \\\"(spotify\\:track:.*)\\\".*");
@@ -172,6 +305,7 @@ public class SpotifyClient {
                     // add song to queue
                     queueSong(dbId, channel, m.group(1), 0);
                 } else {
+                    //Log.d(TAG, "Song lookup failed (not found in response) "+new String(response.getBytes()));
                     Log.d(TAG, "Song lookup failed (not found in response)");
                     db.deleteSong(dbId);
                 }
@@ -181,7 +315,6 @@ public class SpotifyClient {
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                ApplicationController.getInstance().requestCompleted();
                 SqlHelper db = new SqlHelper(mContext.getApplicationContext());
                 db.deleteSong(dbId);
                 db.close();
@@ -210,7 +343,6 @@ public class SpotifyClient {
                     SqlHelper db = new SqlHelper(mContext);
                     db.setSongLoaded(dbId, true);
                     db.close();
-                    if (ApplicationController.getInstance().isEmpty()) Log.d(TAG, "queue is empty");
                 }
             }, new Response.ErrorListener() {
                 @Override
@@ -223,7 +355,6 @@ public class SpotifyClient {
                         SqlHelper db = new SqlHelper(mContext);
                         db.deleteSong(dbId);
                         db.close();
-                        if (ApplicationController.getInstance().isEmpty()) Log.d(TAG, "queue is empty");
                     }
                 }
             });
@@ -296,7 +427,7 @@ public class SpotifyClient {
         ApplicationController.getInstance().addToRequestQueue(req);
     }
 
-
-
-
+    public interface OnPlaylistComplete {
+        void onPlaylistComplete(Map<String, String> playlists);
+    }
 }

@@ -34,7 +34,6 @@ public class ApplicationController extends Application {
     private static final String DEFAULT_CACHE_DIR = "volley";
     private SpotiriusRequestQueue mRequestQueue;
     private static ApplicationController instance;
-    private int mRequestCounter = 0;
 
     @Override
     public void onCreate() {
@@ -64,11 +63,8 @@ public class ApplicationController extends Application {
      * @return The Volley Request queue, the queue will be created if it is null
      */
     public RequestQueue getRequestQueue() {
-        // lazy initialize the request queue, the queue instance will be
-        // created when it is accessed for the first time
         if (mRequestQueue == null) {
-//            mRequestQueue = Volley.newRequestQueue(instance.getApplicationContext());
-            mRequestQueue = newRequestQueue(instance.getApplicationContext(), null, -1);
+            mRequestQueue = newRequestQueue(instance.getApplicationContext(), null, -1, 1);
         }
 
         return mRequestQueue;
@@ -86,14 +82,8 @@ public class ApplicationController extends Application {
         req.setTag(TextUtils.isEmpty(tag) ? TAG : tag);
 
         VolleyLog.d("Adding request to queue: %s", req.getUrl());
-        mRequestCounter++;
 
         getRequestQueue().add(req);
-    }
-
-    public final void requestCompleted() {
-        if (mRequestCounter>0)
-            mRequestCounter = mRequestCounter - 1;
     }
 
     public boolean isEmpty() {
@@ -115,6 +105,10 @@ public class ApplicationController extends Application {
         getRequestQueue().add(req);
     }
 
+    public void setOnQueueCompleteCallback(SpotiriusRequestQueue.OnQueueComplete callback) {
+        ((SpotiriusRequestQueue)getRequestQueue()).setOnQueueCompleteCallback(callback);
+    }
+
     /**
      * Cancels all pending requests by the specified TAG, it is important
      * to specify a TAG so that the pending/ongoing requests can be cancelled.
@@ -127,7 +121,7 @@ public class ApplicationController extends Application {
         }
     }
 
-    private SpotiriusRequestQueue newRequestQueue(Context context, HttpStack stack, int maxDiskCacheBytes) {
+    private SpotiriusRequestQueue newRequestQueue(Context context, HttpStack stack, int maxDiskCacheBytes, int maxSimultaneousRequests) {
         File cacheDir = new File(context.getCacheDir(), DEFAULT_CACHE_DIR);
 
         String userAgent = "volley/0";
@@ -154,12 +148,12 @@ public class ApplicationController extends Application {
         if (maxDiskCacheBytes <= -1)
         {
             // No maximum size specified
-            queue = new SpotiriusRequestQueue(new DiskBasedCache(cacheDir), network);
+            queue = new SpotiriusRequestQueue(new DiskBasedCache(cacheDir), network, maxSimultaneousRequests);
         }
         else
         {
             // Disk cache size specified
-            queue = new SpotiriusRequestQueue(new DiskBasedCache(cacheDir, maxDiskCacheBytes), network);
+            queue = new SpotiriusRequestQueue(new DiskBasedCache(cacheDir, maxDiskCacheBytes), network, maxSimultaneousRequests);
         }
 
         queue.start();
