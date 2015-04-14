@@ -1,8 +1,6 @@
 # spotirius-android
 Want to hear satellite radio playlists on the go? Spotirius syncs your Spotify playlists with ones from satellite radio!
 
-**Requires Spotify Premium!**
-
 This application scrapes the playlists from http://www.dogstarradio.com, looks up tracks with the Spotify API, and adds them to a playlist for you automatically.
 
 #Excuse the mess...
@@ -17,6 +15,14 @@ To start using this project, modify <code>app/src/main/java/com/booshaday/spotir
 Click the menu button, add a channel or two, then click the menu and select *Sync*.
 
 
+#What's New
+* Add channel to new playlist
+* Add channel to existing playlist
+* Remove channel
+* Background sync (sync currently blocks app's UI thread)
+* No longer requires a Spotify Premium account
+
+
 #TODO
 * Better user interface
 * Background sync
@@ -26,4 +32,4 @@ Click the menu button, add a channel or two, then click the menu and select *Syn
 
 
 #Thanks
-This project uses Google Volley and the Spotify Android SDK (beta 8 at the moment). Also thank you to http://www.dogstarradio.com for providing satellite radio playlists!
+This project uses Google Volley and the Spotify Android SDK (beta 9 at the moment). Also thank you to http://www.dogstarradio.com for providing satellite radio playlists!
