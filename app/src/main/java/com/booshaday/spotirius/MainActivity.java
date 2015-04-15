@@ -46,16 +46,22 @@ import java.util.Map;
 
 public class MainActivity extends ActionBarActivity {
     private static final String TAG = "MainActivity";
+    private static final String EOL = "\n";
     private final Context mContext = this;
-
     private SpotifyClient mSpotifyClient;
     private boolean mIsFirstLogin = false;
     private Map<String, String> mPlaylists;
+    private TextView mTextView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mTextView = (TextView)findViewById(R.id.recent_activity);
+
+        mTextView.setText("Spotirius alpha 1 started."+EOL);
 
         mSpotifyClient = new SpotifyClient(getApplicationContext());
 
@@ -67,27 +73,34 @@ public class MainActivity extends ActionBarActivity {
             return;
         }
 
+        addLog("Logging in to saved session...");
+
         // user has had a valid session, so try to use the
         // refresh token to authenticate
         mSpotifyClient.getAccessToken(new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 try {
-                    Log.d(TAG, response.toString(4));
                     if (response.has("access_token")) {
                         AppConfig.setAccessToken(getApplicationContext(), response.getString("access_token"));
                         if (response.has("expires_in")) {
+                            addLog("Session valid for "+String.valueOf(response.getLong("expires_in")+" seconds"));
                             AppConfig.setExpiryTime(getApplicationContext(), System.currentTimeMillis()/1000 + response.getLong("expires_in"));
+                            addLog("Loading your channels...");
                             updateChannelsList();
                         } else {
+                            addLog("Session valid");
                             AppConfig.setExpiryTime(getApplicationContext(), 0);
+                            addLog("Loading your channels...");
                             updateChannelsList();
                         }
                     } else {
+                        addLog("Session has expired, please log in again.");
                         Toast.makeText(getApplicationContext(), "Your session has expired. Please log in again.", Toast.LENGTH_LONG).show();
                         openLoginWindow();
                     }
                 } catch (Exception e) {
+                    addLog("Session has expired, please log in again.");
                     Toast.makeText(getApplicationContext(), "Your session has expired. Please log in again.", Toast.LENGTH_LONG).show();
                     openLoginWindow();
                 }
@@ -96,6 +109,7 @@ public class MainActivity extends ActionBarActivity {
         }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
+                    addLog("Session has expired, please log in again.");
                     Toast.makeText(getApplicationContext(), "Your session has expired. Please log in again.", Toast.LENGTH_LONG).show();
                     openLoginWindow();
                 }
@@ -128,36 +142,8 @@ public class MainActivity extends ActionBarActivity {
                 return true;
 
             case R.id.action_add_channel:
-                DogStarRadioClient dsrc = new DogStarRadioClient(this);
+                DogStarRadioClient dsrc = new DogStarRadioClient(this, null);
                 dsrc.addChannelByPicker();
-                return true;
-
-            case R.id.action_playlist_picker:
-//                mSpotifyClient.getPlaylists(new Response.Listener<JSONObject>() {
-//                    @Override
-//                    public void onResponse(JSONObject response) {
-//                        try {
-//                            Log.d(TAG, response.toString(4));
-//
-//                        } catch (Exception e) {
-//                            Log.e(TAG, "Error parsing JSON response");
-//                        }
-//
-//                    }
-//                }, new Response.ErrorListener() {
-//                    @Override
-//                    public void onErrorResponse(VolleyError error) {
-//                        Log.e(TAG, new String(error.networkResponse.data));
-//                    }
-//                });
-                mSpotifyClient.getPlaylists(new SpotifyClient.OnPlaylistComplete() {
-                    @Override
-                    public void onPlaylistComplete(Map<String, String> playlists) {
-                        for (Map.Entry<String, String> item : playlists.entrySet()) {
-                            Log.d(TAG, item.getKey() + ": " + item.getValue());
-                        }
-                    }
-                });
                 return true;
 
             case R.id.action_settings:
@@ -205,9 +191,7 @@ public class MainActivity extends ActionBarActivity {
             case Constants.ADD_CHANNELS_RESULT:
                 if (resultCode==0) return;
 
-                final SqlHelper db = new SqlHelper(getApplicationContext());
-
-                if (db.channelExists(String.valueOf(resultCode))) {
+                if (ApplicationController.getDb().channelExists(String.valueOf(resultCode))) {
                     Toast.makeText(this, "Channel already exists.", Toast.LENGTH_LONG).show();
                     break;
                 }
@@ -253,9 +237,7 @@ public class MainActivity extends ActionBarActivity {
                                     for (Map.Entry<String, String> item : mPlaylists.entrySet()) {
                                         if (i==which) {
                                             Toast.makeText(mContext, item.getValue(), Toast.LENGTH_SHORT).show();
-                                            SqlHelper db = new SqlHelper(getApplicationContext());
-                                            db.addChannel(selectedChannel, item.getKey());
-                                            db.close();
+                                            ApplicationController.getDb().addChannel(selectedChannel, item.getKey());
                                             Toast.makeText(getApplicationContext(), "Channel added", Toast.LENGTH_SHORT).show();
                                             updateChannelsList();
                                             break;
@@ -297,9 +279,7 @@ public class MainActivity extends ActionBarActivity {
                     public void onResponse(JSONObject response) {
                         try {
                             if (response.has("id")) {
-                                SqlHelper db = new SqlHelper(getApplicationContext());
-                                db.addChannel(String.valueOf(resultCode), response.getString("id"));
-                                db.close();
+                                ApplicationController.getDb().addChannel(String.valueOf(resultCode), response.getString("id"));
                                 Toast.makeText(getApplicationContext(), "Channel added", Toast.LENGTH_SHORT).show();
                                 updateChannelsList();
                             } else {
@@ -398,9 +378,9 @@ public class MainActivity extends ActionBarActivity {
         mSpotifyClient.getPlaylists(new SpotifyClient.OnPlaylistComplete() {
             @Override
             public void onPlaylistComplete(Map<String, String> playlists) {
+                addLog("Channels loaded. Ready.");
                 mPlaylists = playlists;
-                SqlHelper db = new SqlHelper(getApplicationContext());
-                final ArrayList<SpotiriusChannel> channels = db.getChannels();
+                final ArrayList<SpotiriusChannel> channels = ApplicationController.getDb().getChannels();
                 for (SpotiriusChannel channel : channels) {
                     if (playlists.containsKey(channel.getPlaylist()))
                         channel.setPlaylistName(playlists.get(channel.getPlaylist()));
@@ -418,8 +398,7 @@ public class MainActivity extends ActionBarActivity {
                             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
 
                                 public void onClick(DialogInterface dialog, int whichButton) {
-                                    SqlHelper db = new SqlHelper(getApplicationContext());
-                                    if (db.deleteChannel(channels.get(position).getId()))
+                                    if (ApplicationController.getDb().deleteChannel(channels.get(position).getId()))
                                         updateChannelsList();
                                     else
                                         Toast.makeText(getApplicationContext(), "Unable to delete channel!", Toast.LENGTH_LONG).show();
@@ -428,11 +407,16 @@ public class MainActivity extends ActionBarActivity {
                     }
                 });
 
-
+                List<SpotiriusChannel> syncChannels = ApplicationController.getDb().getSyncChannels();
+                if (syncChannels==null || syncChannels.isEmpty()) {
+                    addLog("All channels are up to date!");
+                } else {
+                    for (SpotiriusChannel c : syncChannels) {
+                        addLog(c.getPlaylistName()+" needs to be synced.");
+                    }
+                }
             }
         });
-
-
     }
 
     public class ChannelsAdapter extends ArrayAdapter<SpotiriusChannel> {
@@ -457,5 +441,10 @@ public class MainActivity extends ActionBarActivity {
             // Return the completed view to render on screen
             return convertView;
         }
+    }
+
+    public void addLog(String text) {
+        if (mTextView!=null)
+            mTextView.append(text+EOL);
     }
 }

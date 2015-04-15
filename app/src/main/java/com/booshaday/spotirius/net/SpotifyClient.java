@@ -40,7 +40,6 @@ public class SpotifyClient {
     private static final String SPOTIFY_TOKEN = "https://accounts.spotify.com/api/token";
     private Map<String, String> mPlaylists;
     private OnPlaylistComplete mOnPlaylistComplete;
-
     private Context mContext;
 
     public SpotifyClient(Context context) {
@@ -287,37 +286,30 @@ public class SpotifyClient {
                     + "&limit=1";
         } catch (UnsupportedEncodingException e) {
             Log.d(TAG, "Song lookup failed: unable to build query parameters");
-            SqlHelper db = new SqlHelper(mContext.getApplicationContext());
-            db.deleteSong(dbId);
+            ApplicationController.getDb().deleteSong(dbId);
         }
 
         StringRequest req = new StringRequest(url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                SqlHelper db = new SqlHelper(mContext.getApplicationContext());
-
                 Pattern re = Pattern.compile(".*\\\"uri\\\" \\: \\\"(spotify\\:track:.*)\\\".*");
                 Matcher m = re.matcher(new String(response.getBytes()));
                 if (m.find()) {
                     Log.d(TAG, "Found Spotify track: " + m.group(1));
-                    db.updateUri(dbId, m.group(1));
+                    ApplicationController.getDb().updateUri(dbId, m.group(1));
 
                     // add song to queue
                     queueSong(dbId, channel, m.group(1), 0);
                 } else {
                     //Log.d(TAG, "Song lookup failed (not found in response) "+new String(response.getBytes()));
                     Log.d(TAG, "Song lookup failed (not found in response)");
-                    db.deleteSong(dbId);
+                    ApplicationController.getDb().deleteSong(dbId);
                 }
-
-                db.close();
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                SqlHelper db = new SqlHelper(mContext.getApplicationContext());
-                db.deleteSong(dbId);
-                db.close();
+                ApplicationController.getDb().deleteSong(dbId);
                 Log.d(TAG, "Error adding song: "+new String(error.networkResponse.data));
             }
         }) {
@@ -340,9 +332,7 @@ public class SpotifyClient {
                 @Override
                 public void onResponse(JSONObject response) {
                     Log.d(TAG, "Added track");
-                    SqlHelper db = new SqlHelper(mContext);
-                    db.setSongLoaded(dbId, true);
-                    db.close();
+                    ApplicationController.getDb().setSongLoaded(dbId, true);
                 }
             }, new Response.ErrorListener() {
                 @Override
@@ -352,17 +342,13 @@ public class SpotifyClient {
                         queueSong(dbId, channel, spotifyUri, attempt+1);
                     } else {
                         Log.e(TAG, new String(error.networkResponse.data));
-                        SqlHelper db = new SqlHelper(mContext);
-                        db.deleteSong(dbId);
-                        db.close();
+                        ApplicationController.getDb().deleteSong(dbId);
                     }
                 }
             });
         } else {
             Log.e(TAG, "Failed to add "+spotifyUri+" to playlist: "+channel.getPlaylist()+", removing id: "+String.valueOf(dbId));
-            SqlHelper db = new SqlHelper(mContext);
-            db.deleteSong(dbId);
-            db.close();
+            ApplicationController.getDb().deleteSong(dbId);
         }
 
     }

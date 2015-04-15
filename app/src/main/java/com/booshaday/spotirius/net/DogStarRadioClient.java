@@ -3,8 +3,6 @@ package com.booshaday.spotirius.net;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -19,14 +17,11 @@ import com.booshaday.spotirius.app.SpotiriusRequestQueue;
 import com.booshaday.spotirius.data.AppConfig;
 import com.booshaday.spotirius.data.Constants;
 import com.booshaday.spotirius.data.SpotiriusChannel;
-import com.booshaday.spotirius.data.SqlHelper;
 import com.booshaday.spotirius.view.ChannelPickerActivity;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,14 +39,16 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
     private Context mContext;
     private Intent mIntent;
     private boolean finished = false;
+    private ArrayList<SpotiriusChannel> mChannels;
 
     /**
      * If accessing from GUI, pass the context of Activity
      * If running as service, add Application context!
      * @param context
      */
-    public DogStarRadioClient(Context context) {
+    public DogStarRadioClient(Context context, Intent intent) {
         this.mContext = context;
+        this.mIntent = intent;
     }
 
     /**
@@ -112,8 +109,7 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
     }
 
     public ArrayList<SpotiriusChannel> getChannels() {
-        SqlHelper db = new SqlHelper(mContext.getApplicationContext());
-        return db.getChannels();
+        return ApplicationController.getDb().getSyncChannels();
     }
 
     public void sendStopSignal() {
@@ -121,14 +117,10 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
         ApplicationController.getInstance().cancelPendingRequests(ApplicationController.TAG);
 
         // delete incomplete songs
-        if (mContext.getApplicationContext()!=null) {
-            SqlHelper db = new SqlHelper(mContext.getApplicationContext());
-        }
-
+        ApplicationController.getDb().deleteIncompleteSongs();
     }
 
-    public void sync(Intent intent) {
-        mIntent = intent;
+    public void sync() {
         SpotifyClient client = new SpotifyClient(mContext.getApplicationContext());
         if (!AppConfig.isValidSession(mContext)) {
             Log.d(TAG+"_init", "no valid session found");
@@ -193,10 +185,10 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
         c.add(Calendar.DATE, -1);
 
         // loop through channels and add the urls
-        ArrayList<SpotiriusChannel> channels = getChannels();
+        mChannels = getChannels();
 
-        if (channels!=null) {
-            for (SpotiriusChannel channel : channels) {
+        if (mChannels!=null && mChannels.size()>0) {
+            for (SpotiriusChannel channel : mChannels) {
                 // add the request object to the queue to be executed
 
                 StringRequest req = new StringRequest(
@@ -207,6 +199,9 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
                 req.setRetryPolicy(Constants.RETRY_POLICY);
                 ApplicationController.getInstance().addToRequestQueue(req);
             }
+        } else {
+            // no channels to sync
+            onQueueComplete();
         }
     }
 
@@ -221,9 +216,6 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
     private Response.Listener ChannelResponse = new Response.Listener<String>() {
         @Override
         public void onResponse(String response) {
-            // get database instance
-            SqlHelper db = new SqlHelper(mContext.getApplicationContext());
-
             final SpotifyClient client = new SpotifyClient(mContext);
 
             // see if we have another page to process
@@ -249,26 +241,32 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
             m = re.matcher(response);
             while (m.find()) {
                 Log.v(TAG, String.format("Found song. channel: %s, artist: %s, title: %s", m.group(1), m.group(2), m.group(3)));
-                final long id = db.addSong(Integer.parseInt(m.group(1)), m.group(2), m.group(3));
+                final long id = ApplicationController.getDb().addSong(Integer.parseInt(m.group(1)), m.group(2), m.group(3));
                 if (id>0) {
                     Log.v(TAG, String.format("Found new song: channel: %s, artist: %s, title: %s, dbId: %d", m.group(1), m.group(2), m.group(3), id));
 
-                    SpotiriusChannel channel = db.getChannel(m.group(1));
+                    SpotiriusChannel channel = ApplicationController.getDb().getChannel(m.group(1));
                     if (channel!=null) {
-                        client.addSongIfFound(id, db.getChannel(m.group(1)), m.group(2), m.group(3));
+                        client.addSongIfFound(id, ApplicationController.getDb().getChannel(m.group(1)), m.group(2), m.group(3));
                     } else {
                         Log.e(TAG, "SpotiriusChannel lookup failed, deleting from db");
-                        db.deleteSong(id);
+                        ApplicationController.getDb().deleteSong(id);
                     }
                 }
             }
-
-            db.close();
         }
     };
 
     @Override
     public void onQueueComplete() {
+        // flag channels as synced
+        if (mChannels!=null) {
+            for (SpotiriusChannel channel : mChannels) {
+                ApplicationController.getDb().updateChannelLastSync(channel.getId());
+            }
+        }
+        mChannels = null;
+
         Log.d(TAG, "Queue completed, stopping service");
         if (mContext!=null && mIntent!=null) {
             mContext.stopService(mIntent);

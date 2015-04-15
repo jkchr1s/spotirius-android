@@ -8,12 +8,14 @@ public class SpotiriusChannel {
     private String channel;
     private String playlist;
     private String playlistName;
+    private String lastSync;
 
-    public SpotiriusChannel(int id, String channel, String playlist) {
+    public SpotiriusChannel(int id, String channel, String playlist, String lastSync) {
         this.id = id;
         this.channel = channel;
         this.playlist = playlist;
         this.playlistName = playlist;
+        this.lastSync = lastSync;
     }
 
     public int getId() { return this.id; }
@@ -33,4 +35,6 @@ public class SpotiriusChannel {
     public void setPlaylistName(String name) {
         this.playlistName = name;
     }
+
+    public String getLastSync() { return this.lastSync; }
 }
