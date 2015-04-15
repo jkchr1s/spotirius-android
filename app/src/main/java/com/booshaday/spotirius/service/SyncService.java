@@ -1,12 +1,17 @@
 package com.booshaday.spotirius.service;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.IBinder;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.booshaday.spotirius.R;
 import com.booshaday.spotirius.net.DogStarRadioClient;
 
 /**
@@ -14,34 +19,30 @@ import com.booshaday.spotirius.net.DogStarRadioClient;
  */
 public class SyncService extends Service {
     private final String TAG = "SyncService";
+    private final int NOTIFICATION_ID = 1000;
     private final IBinder mBinder = new SyncBinder();
     private DogStarRadioClient mClient;
-    private boolean isRunning = false;
-
-//    public SyncService() {
-//        super("SyncService");
-//    }
-
-//    public SyncService(String name) {
-//        super(name);
-//    }
-
-    @Override
-    public void onCreate() {
-        if (isRunning) return;
-
-        isRunning = true;
-
-
-    }
+    private NotificationManager mNotificationManager;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        //TODO do something useful
         Log.d(TAG, "onStartCommand");
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle("Spotirius Sync")
+                .setContentText("Playlist sync in progress...");
+
+        Notification notification = mBuilder.build();
+        notification.flags = Notification.FLAG_ONGOING_EVENT;
+
+        mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(NOTIFICATION_ID, notification);
+
         if (mClient==null)
-            mClient = new DogStarRadioClient(getApplicationContext());
-        mClient.sync(intent);
+            mClient = new DogStarRadioClient(getApplicationContext(), intent);
+        mClient.sync();
         return Service.START_STICKY;
     }
 
@@ -49,14 +50,6 @@ public class SyncService extends Service {
     public IBinder onBind(Intent intent) {
         return mBinder;
     }
-
-//    @Override
-//    protected void onHandleIntent(Intent intent) {
-//        Log.d(TAG, "onHandleIntent()");
-//        Toast.makeText(getApplicationContext(), "Sync started", Toast.LENGTH_SHORT).show();
-//        DogStarRadioClient client = new DogStarRadioClient(getApplicationContext());
-//        client.sync();
-//    }
 
     public class SyncBinder extends Binder {
         SyncService getService() {
@@ -67,10 +60,17 @@ public class SyncService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy()");
+
+        if (mNotificationManager!=null) {
+            mNotificationManager.cancel(NOTIFICATION_ID);
+            mNotificationManager = null;
+        }
+
         if (mClient!=null) {
             mClient.sendStopSignal();
         }
         mClient = null;
+
         super.onDestroy();
     }
 }

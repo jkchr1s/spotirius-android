@@ -2,20 +2,6 @@
 <items version="2" >
 
     <item
-        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/21.0.3/classes.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="81d42bf983a8741f4888a6e333e454e4a5e0eeb7">
-        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-e7c143853f1cd14ee2679f3f220130707d0567d1.jar" />
-    </item>
-    <item
-        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.google.guava/guava/18.0/cce0823396aa693798f8882e64213b1772032b09/guava-18.0.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="cce0823396aa693798f8882e64213b1772032b09">
-        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/guava-18.0-2f91672a3a817e5b9d7c3358ba9fd3c6c6789d9f.jar" />
-    </item>
-    <item
         jar="/Users/chris/Library/Android/sdk/extras/android/m2repository/com/android/support/support-annotations/21.0.3/support-annotations-21.0.3.jar"
         jumboMode="false"
         revision="21.1.2"
@@ -37,18 +23,32 @@
         <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/library-1.0.15-6e32cd806185d3ea0eb896be379ee61f1278c5df.jar" />
     </item>
     <item
-        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/libs/internal_impl-21.0.3.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="01ec05bfbafcc07646ba813000bf2ef11742dd03">
-        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/internal_impl-21.0.3-1610ff4372875b91940ef7d3368a8090adc7c731.jar" />
-    </item>
-    <item
         jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.spotify.sdk/spotify-auth/1.0.0-beta9/classes.jar"
         jumboMode="false"
         revision="21.1.2"
         sha1="ce48e0e9dcaaba897077f28799eb564516430920">
         <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-7b32a88ba8fa7986feb1d87017c7cc87e6d0ba94.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/21.0.3/classes.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="81d42bf983a8741f4888a6e333e454e4a5e0eeb7">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-e7c143853f1cd14ee2679f3f220130707d0567d1.jar" />
+    </item>
+    <item
+        jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.google.guava/guava/18.0/cce0823396aa693798f8882e64213b1772032b09/guava-18.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="cce0823396aa693798f8882e64213b1772032b09">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/guava-18.0-2f91672a3a817e5b9d7c3358ba9fd3c6c6789d9f.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/libs/internal_impl-21.0.3.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="01ec05bfbafcc07646ba813000bf2ef11742dd03">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/internal_impl-21.0.3-1610ff4372875b91940ef7d3368a8090adc7c731.jar" />
     </item>
 
 </items>

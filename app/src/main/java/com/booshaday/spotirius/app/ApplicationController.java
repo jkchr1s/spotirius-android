@@ -18,6 +18,7 @@ import com.android.volley.toolbox.HttpClientStack;
 import com.android.volley.toolbox.HttpStack;
 import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.Volley;
+import com.booshaday.spotirius.data.SqlHelper;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.AbstractHttpClient;
@@ -34,6 +35,7 @@ public class ApplicationController extends Application {
     private static final String DEFAULT_CACHE_DIR = "volley";
     private SpotiriusRequestQueue mRequestQueue;
     private static ApplicationController instance;
+    private static SqlHelper mDatabase;
 
     @Override
     public void onCreate() {
@@ -41,6 +43,15 @@ public class ApplicationController extends Application {
 
         // initialize the singleton
         instance = this;
+        mDatabase = new SqlHelper(this);
+    }
+
+    @Override
+    public void onTerminate() {
+        if (mDatabase!=null) {
+            mDatabase.close();
+            mDatabase = null;
+        }
     }
 
     /**
@@ -52,6 +63,10 @@ public class ApplicationController extends Application {
             instance = getSync();
         }
         return instance;
+    }
+
+    public static SqlHelper getDb() {
+        return mDatabase;
     }
 
     private static synchronized ApplicationController getSync() {

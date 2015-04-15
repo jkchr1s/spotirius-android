@@ -7,7 +7,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by chris on 1/28/15.
@@ -26,6 +28,7 @@ public class SqlHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CHANNELS_ID = "_id";
     public static final String COLUMN_CHANNELS_CHANNEL = "channel";
     public static final String COLUMN_CHANNELS_PLAYLIST = "playlist";
+    public static final String COLUMN_CHANNELS_LASTSYNC = "lastsync";
 
     private static final String DATABASE_NAME = "songs.db";
     private static final int DATABASE_VERSION = 2;
@@ -42,7 +45,8 @@ public class SqlHelper extends SQLiteOpenHelper {
     private static final String DATABASE_CREATE_TABLE_CHANNELS = "create table "
             + TABLE_CHANNELS + "(" + COLUMN_CHANNELS_ID + " integer primary key autoincrement, "
             + COLUMN_CHANNELS_CHANNEL + " text not null, "
-            + COLUMN_CHANNELS_PLAYLIST + " text not null)";
+            + COLUMN_CHANNELS_PLAYLIST + " text not null, "
+            + COLUMN_CHANNELS_LASTSYNC + " text default '')";
 
     // constuctor
     public SqlHelper(Context context) {
@@ -134,7 +138,24 @@ public class SqlHelper extends SQLiteOpenHelper {
 
         ArrayList<SpotiriusChannel> channels = new ArrayList<>();
 
-        Cursor cursor = db.rawQuery("select "+COLUMN_CHANNELS_ID+", "+COLUMN_CHANNELS_CHANNEL+", "+COLUMN_CHANNELS_PLAYLIST+" FROM "+TABLE_CHANNELS+" ORDER BY "+COLUMN_CHANNELS_CHANNEL, null);
+        Cursor cursor = db.rawQuery("select "+COLUMN_CHANNELS_ID+", "+COLUMN_CHANNELS_CHANNEL+", "+COLUMN_CHANNELS_PLAYLIST+", "+COLUMN_CHANNELS_LASTSYNC+" FROM "+TABLE_CHANNELS+" ORDER BY "+COLUMN_CHANNELS_CHANNEL, null);
+        if (cursor==null) return channels;
+
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()) {
+            channels.add(cursorToChannel(cursor));
+            cursor.moveToNext();
+        }
+
+        return channels;
+    }
+
+    public ArrayList<SpotiriusChannel> getSyncChannels() {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        ArrayList<SpotiriusChannel> channels = new ArrayList<>();
+
+        Cursor cursor = db.rawQuery("select "+COLUMN_CHANNELS_ID+", "+COLUMN_CHANNELS_CHANNEL+", "+COLUMN_CHANNELS_PLAYLIST+", "+COLUMN_CHANNELS_LASTSYNC+" FROM "+TABLE_CHANNELS+" WHERE "+COLUMN_CHANNELS_LASTSYNC+" != '"+getCurrentDate()+"' ORDER BY "+COLUMN_CHANNELS_CHANNEL, null);
         if (cursor==null) return channels;
 
         cursor.moveToFirst();
@@ -179,6 +200,7 @@ public class SqlHelper extends SQLiteOpenHelper {
 
         if (cursor==null) {
             Log.v("SqlHelper", "Null cursor");
+            return songs;
         }
 
         if (cursor.getCount() > 0) {
@@ -197,7 +219,7 @@ public class SqlHelper extends SQLiteOpenHelper {
 
     public SpotiriusChannel getChannel(String channel) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("select "+COLUMN_CHANNELS_ID+", "+COLUMN_CHANNELS_CHANNEL+", "+COLUMN_CHANNELS_PLAYLIST+" FROM "+TABLE_CHANNELS+" WHERE "+COLUMN_CHANNELS_CHANNEL+"=?",
+        Cursor cursor = db.rawQuery("select "+COLUMN_CHANNELS_ID+", "+COLUMN_CHANNELS_CHANNEL+", "+COLUMN_CHANNELS_PLAYLIST+", "+COLUMN_CHANNELS_LASTSYNC+" FROM "+TABLE_CHANNELS+" WHERE "+COLUMN_CHANNELS_CHANNEL+"=?",
                 new String[]{channel});
 
         if (cursor.getCount() > 0) {
@@ -208,8 +230,23 @@ public class SqlHelper extends SQLiteOpenHelper {
         }
     }
 
+    public void updateChannelLastSync(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues cv = new ContentValues();
+        String filter = COLUMN_CHANNELS_ID + "=" + id;
+
+        cv.put(COLUMN_CHANNELS_LASTSYNC, getCurrentDate());
+
+        db.update(TABLE_CHANNELS, cv, filter, null);
+    }
+
+    public String getCurrentDate() {
+        return new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+    }
+
     private SpotiriusChannel cursorToChannel(Cursor cursor) {
-        return new SpotiriusChannel(cursor.getInt(0), cursor.getString(1), cursor.getString(2));
+        return new SpotiriusChannel(cursor.getInt(0), cursor.getString(1), cursor.getString(2), cursor.getString(3));
     }
 
     private SongItem cursorToSong(Cursor cursor) {
