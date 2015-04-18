@@ -106,6 +106,10 @@ public class ApplicationController extends Application {
         return mRequestQueue.isEmpty();
     }
 
+    public void stop() {
+        ((SpotiriusRequestQueue)getRequestQueue()).sendQueueEmpty();
+    }
+
     /**
      * Adds the specified request to the global queue using the Default TAG.
      *
@@ -122,6 +126,10 @@ public class ApplicationController extends Application {
 
     public void setOnQueueCompleteCallback(SpotiriusRequestQueue.OnQueueComplete callback) {
         ((SpotiriusRequestQueue)getRequestQueue()).setOnQueueCompleteCallback(callback);
+    }
+
+    public void setCallbackEnabled(boolean callbackEnabled) {
+        ((SpotiriusRequestQueue)getRequestQueue()).setCallbackEnabled(callbackEnabled);
     }
 
     /**

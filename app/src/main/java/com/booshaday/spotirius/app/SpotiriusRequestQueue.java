@@ -18,6 +18,7 @@ public class SpotiriusRequestQueue extends RequestQueue {
     private static final String TAG = "SpotiriusRequestQueue";
     private int queueCount = 0;
     private OnQueueComplete mCallback;
+    private boolean mCallbackEnabled = false;
 
     public SpotiriusRequestQueue(Cache cache, Network network, int threadPoolSize, ResponseDelivery delivery) {
         super(cache, network, threadPoolSize, delivery);
@@ -52,6 +53,10 @@ public class SpotiriusRequestQueue extends RequestQueue {
         });
     }
 
+    public void setCallbackEnabled(boolean callbackEnabled) {
+        this.mCallbackEnabled = callbackEnabled;
+    }
+
     @Override
     public <T> Request<T> add(Request<T> request) {
         addToQueueCount();
@@ -66,8 +71,20 @@ public class SpotiriusRequestQueue extends RequestQueue {
     private void removeFromQueueCount() {
         queueCount = queueCount - 1;
 
-        if (queueCount==0 && mCallback!=null) {
+        if (queueCount==0 && mCallback!=null && mCallbackEnabled) {
             mCallback.onQueueComplete();
+        }
+    }
+
+    public void sendQueueEmpty() {
+        if (mCallback!=null) {
+            mCallbackEnabled = true;
+            mCallback.onQueueComplete();
+        }
+    }
+
+    public void removeCallback() {
+        if (mCallback!=null) {
             mCallback = null;
         }
     }
