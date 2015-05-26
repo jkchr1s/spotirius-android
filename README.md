@@ -5,7 +5,7 @@ This application scrapes the playlists from http://www.dogstarradio.com, looks u
 
 #Excuse the mess...
 
-The user interface is very clunky at the moment. Please excuse the mess as the application is under heavy development.
+The user interface is very clunky at the moment. Please excuse the mess as the application is under heavy development. It's best to install the apk, sign in, quit the app, and relaunch. If you don't, it won't see existing playlists when you add a channel. This is on my to-do list.
 
 
 #Getting Started
