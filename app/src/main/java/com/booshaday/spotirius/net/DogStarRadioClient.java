@@ -2,6 +2,7 @@ package com.booshaday.spotirius.net;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -28,12 +29,15 @@ import java.util.regex.Pattern;
 /**
  * Created by chris on 3/14/15.
  */
-public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete {
+public class DogStarRadioClient {
     private static final String BASE_URL = "http://www.dogstarradio.com";
     private static final String SEARCH_URI = "/search_playlist.php";
     private static final String SEARCH_ARGS = "?artist=&title=&channel=%s&month=%d&date=%d&shour=&sampm=&stz=&ehour=&eampm=";
     private static final String SPOTIFY_API = "https://api.spotify.com/v1";
     private static final String TAG = "DogStarRadioClient";
+    private static final Pattern NEXT_PAGE_PATTERN = Pattern.compile(".*<a href=(.*)>Next<br>Page<\\/a>.*");
+    private static final Pattern SONG_LIST_PATTERN = Pattern.compile("<tr><td>(\\d+)<\\/td><td>(.*)<\\/td><td><a.*\">(.*)<\\/a><\\/td><td>\\d+\\/\\d+\\/\\d+<\\/td><td>\\d+\\:\\d+\\:\\d+ [A|P]M<\\/td><\\/tr>");
+
     private static final int POLL_INTERVAL = 5000;
 
     private Context mContext;
@@ -124,7 +128,8 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
         SpotifyClient client = new SpotifyClient(mContext.getApplicationContext());
         if (!AppConfig.isValidSession(mContext)) {
             Log.d(TAG+"_init", "no valid session found");
-            Toast.makeText(mContext, mContext.getString(R.string.new_session), Toast.LENGTH_LONG).show();
+            ApplicationController.getInstance().setCallbackEnabled(true);
+            ApplicationController.getInstance().stop();
             return;
         }
 
@@ -177,31 +182,40 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
     }
 
     private void startSync() {
-        // set on sync complete callback
-        ApplicationController.getInstance().setOnQueueCompleteCallback(this);
+        // spawn asynctask to sync
+        new DogStarRadioSync().execute();
+    }
 
-        // get data from yesterday
-        Calendar c = Calendar.getInstance();
-        c.add(Calendar.DATE, -1);
+    private class DogStarRadioSync extends AsyncTask<Void, Void, Void> {
 
-        // loop through channels and add the urls
-        mChannels = getChannels();
+        @Override
+        protected Void doInBackground(Void... params) {
+            // get data from yesterday
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.DATE, -1);
 
-        if (mChannels!=null && mChannels.size()>0) {
-            for (SpotiriusChannel channel : mChannels) {
-                // add the request object to the queue to be executed
+            // loop through channels and add the urls
+            mChannels = getChannels();
 
-                StringRequest req = new StringRequest(
-                        BASE_URL+SEARCH_URI+String.format(SEARCH_ARGS, channel.getChannel(), c.get(Calendar.MONTH)+1, c.get(Calendar.DATE)),
-                        ChannelResponse,
-                        ChannelErrorResponse
-                );
-                req.setRetryPolicy(Constants.RETRY_POLICY);
-                ApplicationController.getInstance().addToRequestQueue(req);
+            if (mChannels!=null && mChannels.size()>0) {
+                for (SpotiriusChannel channel : mChannels) {
+                    // add the request object to the queue to be executed
+
+                    StringRequest req = new StringRequest(
+                            BASE_URL+SEARCH_URI+String.format(SEARCH_ARGS, channel.getChannel(), c.get(Calendar.MONTH)+1, c.get(Calendar.DATE)),
+                            ChannelResponse,
+                            ChannelErrorResponse
+                    );
+                    req.setRetryPolicy(Constants.RETRY_POLICY);
+                    ApplicationController.getInstance().addToRequestQueue(req);
+                    ApplicationController.getInstance().setCallbackEnabled(true);
+                }
+            } else {
+                Log.d(TAG, "No channels to sync");
+                // no channels to sync
+                ApplicationController.getInstance().stop();
             }
-        } else {
-            // no channels to sync
-            onQueueComplete();
+            return null;
         }
     }
 
@@ -216,11 +230,10 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
     private Response.Listener ChannelResponse = new Response.Listener<String>() {
         @Override
         public void onResponse(String response) {
-            final SpotifyClient client = new SpotifyClient(mContext);
+            SpotifyClient client = new SpotifyClient(mContext);
 
             // see if we have another page to process
-            Pattern re = Pattern.compile(".*<a href=(.*)>Next<br>Page<\\/a>.*");
-            Matcher m = re.matcher(response);
+            Matcher m = NEXT_PAGE_PATTERN.matcher(response);
 
             // if we have another page, add to the url queue
             if (m.find()) {
@@ -237,8 +250,7 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
             }
 
             // scrape songs off the page
-            re = Pattern.compile("<tr><td>(\\d+)<\\/td><td>(.*)<\\/td><td><a.*\">(.*)<\\/a><\\/td><td>\\d+\\/\\d+\\/\\d+<\\/td><td>\\d+\\:\\d+\\:\\d+ [A|P]M<\\/td><\\/tr>");
-            m = re.matcher(response);
+            m = SONG_LIST_PATTERN.matcher(response);
             while (m.find()) {
                 Log.v(TAG, String.format("Found song. channel: %s, artist: %s, title: %s", m.group(1), m.group(2), m.group(3)));
                 final long id = ApplicationController.getDb().addSong(Integer.parseInt(m.group(1)), m.group(2), m.group(3));
@@ -256,20 +268,4 @@ public class DogStarRadioClient implements SpotiriusRequestQueue.OnQueueComplete
             }
         }
     };
-
-    @Override
-    public void onQueueComplete() {
-        // flag channels as synced
-        if (mChannels!=null) {
-            for (SpotiriusChannel channel : mChannels) {
-                ApplicationController.getDb().updateChannelLastSync(channel.getId());
-            }
-        }
-        mChannels = null;
-
-        Log.d(TAG, "Queue completed, stopping service");
-        if (mContext!=null && mIntent!=null) {
-            mContext.stopService(mIntent);
-        }
-    }
 }
