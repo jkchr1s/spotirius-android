@@ -8,8 +8,7 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme"
-        android:name="com.booshaday.spotirius.app.ApplicationController">
+        android:theme="@style/AppTheme">
 
         <activity
             android:name=".MainActivity"
@@ -38,14 +37,7 @@
         <activity android:name=".view.ChannelPickerActivity" />
 
         // sync service
-        <service android:name=".service.SyncService" />
-        <receiver android:name=".service.SyncScheduleServiceReceiver" >
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-        <receiver android:name=".service.SyncStartServiceReceiver" >
-        </receiver>
+        <service android:name=".service.SyncIntentService" />
 
         // spotify login
         <activity
