@@ -1,11 +1,9 @@
 package com.booshaday.spotirius;
 
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,34 +19,31 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.booshaday.spotirius.app.ApplicationController;
 import com.booshaday.spotirius.data.AppConfig;
+import com.booshaday.spotirius.data.Channel;
 import com.booshaday.spotirius.data.Constants;
-import com.booshaday.spotirius.data.SpotiriusChannel;
-import com.booshaday.spotirius.data.SqlHelper;
-import com.booshaday.spotirius.net.DogStarRadioClient;
-import com.booshaday.spotirius.net.SpotifyClient;
+import com.booshaday.spotirius.net.RestClient;
+import com.booshaday.spotirius.service.SyncIntentService;
 import com.booshaday.spotirius.service.SyncService;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import retrofit.Callback;
+import retrofit.RetrofitError;
+
 
 public class MainActivity extends ActionBarActivity {
     private static final String TAG = "MainActivity";
     private static final String EOL = "\n";
     private final Context mContext = this;
-    private SpotifyClient mSpotifyClient;
     private boolean mIsFirstLogin = false;
     private Map<String, String> mPlaylists;
     private TextView mTextView;
@@ -61,10 +56,14 @@ public class MainActivity extends ActionBarActivity {
 
         mTextView = (TextView)findViewById(R.id.recent_activity);
 
-        mTextView.setText("Spotirius alpha 1 started."+EOL);
+        mTextView.setText("Spotirius alpha 3 started."+EOL);
 
-        mSpotifyClient = new SpotifyClient(getApplicationContext());
+        initMainActivity();
 
+        Log.d(TAG, "channels: " + String.valueOf(AppConfig.getChannels(this).size()));
+    }
+
+    public void initMainActivity() {
         // if user is not logged in, we need to auth them
         if (!AppConfig.isValidSession(getApplicationContext())) {
             // user is not currently logged in
@@ -77,43 +76,42 @@ public class MainActivity extends ActionBarActivity {
 
         // user has had a valid session, so try to use the
         // refresh token to authenticate
-        mSpotifyClient.getAccessToken(new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    if (response.has("access_token")) {
-                        AppConfig.setAccessToken(getApplicationContext(), response.getString("access_token"));
-                        if (response.has("expires_in")) {
-                            addLog("Session valid for "+String.valueOf(response.getLong("expires_in")+" seconds"));
-                            AppConfig.setExpiryTime(getApplicationContext(), System.currentTimeMillis()/1000 + response.getLong("expires_in"));
-                            addLog("Loading your channels...");
+        RestClient.Spotify client = RestClient.create(
+                RestClient.Spotify.class,
+                RestClient.Spotify.ACCOUNTS_URL,
+                null
+        );
+        client.getRefreshTokenAsync(
+                Constants.SPOTIFY_CLIENT_ID,
+                Constants.SPOTIFY_CLIENT_SECRET,
+                "refresh_token",
+                AppConfig.getRefreshToken(this),
+                new Callback<JsonElement>() {
+                    @Override
+                    public void success(JsonElement j, retrofit.client.Response response) {
+                        try {
+                            AppConfig.setAccessToken(
+                                    getApplicationContext(),
+                                    j.getAsJsonObject().get("access_token").getAsString()
+                            );
+                            AppConfig.setExpiryTime(
+                                    getApplicationContext(),
+                                    System.currentTimeMillis() / 1000 + j.getAsJsonObject().get("expires_in").getAsLong()
+                            );
+                            Log.d(TAG, "Token refreshed successfully");
+                            addLog("Login success...");
                             updateChannelsList();
-                        } else {
-                            addLog("Session valid");
-                            AppConfig.setExpiryTime(getApplicationContext(), 0);
-                            addLog("Loading your channels...");
-                            updateChannelsList();
+                        } catch (Exception e) {
+                            Log.e(TAG, "error getting access token: " + e.getMessage());
                         }
-                    } else {
-                        addLog("Session has expired, please log in again.");
-                        Toast.makeText(getApplicationContext(), "Your session has expired. Please log in again.", Toast.LENGTH_LONG).show();
-                        openLoginWindow();
                     }
-                } catch (Exception e) {
-                    addLog("Session has expired, please log in again.");
-                    Toast.makeText(getApplicationContext(), "Your session has expired. Please log in again.", Toast.LENGTH_LONG).show();
-                    openLoginWindow();
-                }
 
-            }
-        }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    addLog("Session has expired, please log in again.");
-                    Toast.makeText(getApplicationContext(), "Your session has expired. Please log in again.", Toast.LENGTH_LONG).show();
-                    openLoginWindow();
-                }
-        });
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Toast.makeText(mContext, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.e(TAG, "Error getting access token: " + error.getMessage());
+                    }
+                });
     }
 
 
@@ -133,17 +131,17 @@ public class MainActivity extends ActionBarActivity {
         switch(item.getItemId()) {
             case R.id.action_sync:
                 Toast.makeText(getApplicationContext(), "Sync started", Toast.LENGTH_SHORT).show();
-                Intent syncIntent = new Intent(this, SyncService.class);
+                Intent syncIntent = new Intent(this, SyncIntentService.class);
                 startService(syncIntent);
                 return true;
 
             case R.id.action_login:
                 openLoginWindow();
+
                 return true;
 
             case R.id.action_add_channel:
-                DogStarRadioClient dsrc = new DogStarRadioClient(this, null);
-                dsrc.addChannelByPicker();
+                SyncService.addChannelByPicker(this);
                 return true;
 
             case R.id.action_settings:
@@ -173,6 +171,7 @@ public class MainActivity extends ActionBarActivity {
                     case CODE:
                         mIsFirstLogin = true;
                         updateRefreshToken(response.getCode());
+                        initMainActivity();
                         break;
 
                     // Auth flow returned an error
@@ -190,11 +189,6 @@ public class MainActivity extends ActionBarActivity {
 
             case Constants.ADD_CHANNELS_RESULT:
                 if (resultCode==0) return;
-
-                if (ApplicationController.getDb().channelExists(String.valueOf(resultCode))) {
-                    Toast.makeText(this, "Channel already exists.", Toast.LENGTH_LONG).show();
-                    break;
-                }
 
                 final String selectedChannel = String.valueOf(resultCode);
 
@@ -237,7 +231,7 @@ public class MainActivity extends ActionBarActivity {
                                     for (Map.Entry<String, String> item : mPlaylists.entrySet()) {
                                         if (i==which) {
                                             Toast.makeText(mContext, item.getValue(), Toast.LENGTH_SHORT).show();
-                                            ApplicationController.getDb().addChannel(selectedChannel, item.getKey());
+                                            AppConfig.addChannel(getApplicationContext(), new Channel(selectedChannel, item.getKey()));
                                             Toast.makeText(getApplicationContext(), "Channel added", Toast.LENGTH_SHORT).show();
                                             updateChannelsList();
                                             break;
@@ -274,26 +268,34 @@ public class MainActivity extends ActionBarActivity {
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 String value = input.getText().toString();
-                mSpotifyClient.createPlaylist(value, new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            if (response.has("id")) {
-                                ApplicationController.getDb().addChannel(String.valueOf(resultCode), response.getString("id"));
-                                Toast.makeText(getApplicationContext(), "Channel added", Toast.LENGTH_SHORT).show();
-                                updateChannelsList();
-                            } else {
-                                Toast.makeText(getApplicationContext(), "Unable to determine playlist id", Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "error parsing JSON response");
-                        }
+                Log.d(TAG, "Create playlist: "+value);
 
-                    }
-                }, new Response.ErrorListener() {
+                RestClient.Spotify client = RestClient.create(
+                        RestClient.Spotify.class,
+                        RestClient.Spotify.API_URL,
+                        "Bearer " + AppConfig.getAccessToken(mContext)
+                );
+
+                // build json body
+                Map<String, Object> body = new HashMap<>();
+                body.put("name", value);
+                body.put("public", true);
+
+                client.createPlaylistAsync(AppConfig.getUsername(mContext), body, new Callback<JsonElement>() {
                     @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG, new String(error.networkResponse.data));
+                    public void success(JsonElement j, retrofit.client.Response response) {
+                        try {
+                            AppConfig.addChannel(mContext, new Channel(String.valueOf(resultCode),
+                                    j.getAsJsonObject().get("id").getAsString()));
+                            updateChannelsList();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error creating playlist: "+e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Log.e(TAG, "Error sending request: "+ error.getMessage()+"\n"+error.getBody().toString());
                     }
                 });
             }
@@ -309,65 +311,68 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void getMe() {
-        mSpotifyClient.getMe(new Response.Listener<JSONObject>() {
+        RestClient.Spotify client = RestClient.create(
+                RestClient.Spotify.class,
+                RestClient.Spotify.API_URL,
+                "Bearer " + AppConfig.getAccessToken(mContext)
+        );
+
+        client.getMeAsync(new Callback<JsonElement>() {
             @Override
-            public void onResponse(JSONObject response) {
+            public void success(JsonElement j, retrofit.client.Response response) {
                 try {
-                    if (response.has("id")) {
-                        AppConfig.setUsername(getApplicationContext(), response.getString("id"));
-                    } else {
-                        AppConfig.setUsername(getApplicationContext(), "");
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                    AppConfig.setUsername(
+                            mContext,
+                            j.getAsJsonObject().get("id").getAsString()
+                    );
+                    mIsFirstLogin = false;
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing JSON response for me");
                 }
             }
-        }, new Response.ErrorListener() {
+
             @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e(TAG, new String(error.networkResponse.data));
+            public void failure(RetrofitError error) {
+                Log.e(TAG, error.getMessage());
             }
         });
-        mIsFirstLogin = false;
     }
 
     private void updateRefreshToken(String accessCode) {
-        mSpotifyClient.getRefreshToken(accessCode, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    Context context = getApplicationContext();
-                    if (response.has("access_token")) {
-                        AppConfig.setAccessToken(context, response.getString("access_token"));
-                    } else {
-                        AppConfig.setAccessToken(context, "");
-                    }
-                    if (response.has("refresh_token")) {
-                        AppConfig.setRefreshToken(context, response.getString("refresh_token"));
-                    } else {
-                        AppConfig.setAccessToken(context, "");
-                    }
-                    if (response.has("expires_in")) {
-                        AppConfig.setExpiryTime(context, System.currentTimeMillis()/1000 + response.getLong("expires_in"));
-                    } else {
-                        AppConfig.setExpiryTime(context, 0);
-                    }
-                    if (mIsFirstLogin) getMe();
-                    else {
-                        if (!AppConfig.isValidSession(getApplicationContext())) {
-                            Toast.makeText(getApplicationContext(), "Spotirius credentials are invalid!", Toast.LENGTH_LONG).show();
+        RestClient.Spotify client = RestClient.create(
+                RestClient.Spotify.class,
+                RestClient.Spotify.ACCOUNTS_URL,
+                null
+        );
+        client.getAccessTokenAsync(
+                Constants.SPOTIFY_CLIENT_ID,
+                Constants.SPOTIFY_CLIENT_SECRET,
+                "authorization_code",
+                accessCode,
+                Constants.SPOTIFY_REDIRECT_URI,
+                new Callback<JsonElement>() {
+                    @Override
+                    public void success(JsonElement j, retrofit.client.Response response) {
+                        try {
+                            AppConfig.setAccessToken(
+                                    getApplicationContext(),
+                                    j.getAsJsonObject().get("access_token").getAsString()
+                            );
+                            AppConfig.setExpiryTime(
+                                    getApplicationContext(),
+                                    System.currentTimeMillis() / 1000 + j.getAsJsonObject().get("expires_in").getAsLong()
+                            );
+                            updateChannelsList();
+                        } catch (Exception e) {
+                            Log.e(TAG, e.getMessage());
                         }
                     }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e(TAG, new String(error.networkResponse.data));
-            }
-        });
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Log.e(TAG, error.getMessage());
+                    }
+                });
     }
 
     private void logStatus(String message) {
@@ -375,59 +380,88 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void updateChannelsList() {
-        mSpotifyClient.getPlaylists(new SpotifyClient.OnPlaylistComplete() {
-            @Override
-            public void onPlaylistComplete(Map<String, String> playlists) {
-                addLog("Channels loaded. Ready.");
-                mPlaylists = playlists;
-                final ArrayList<SpotiriusChannel> channels = ApplicationController.getDb().getChannels();
-                for (SpotiriusChannel channel : channels) {
-                    if (playlists.containsKey(channel.getPlaylist()))
-                        channel.setPlaylistName(playlists.get(channel.getPlaylist()));
-                }
-                ChannelsAdapter adapter = new ChannelsAdapter(mContext, channels);
-                final ListView listView = (ListView) findViewById(R.id.channelList);
-                listView.setAdapter(adapter);
-                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    public void onItemClick(AdapterView<?> parent, View view,
-                                            final int position, long id) {
-                        new AlertDialog.Builder(mContext)
-                            .setTitle("Remove Channel")
-                            .setMessage("Are you sure you want to delete channel "+channels.get(position).getChannel()+"?")
-                            .setIcon(android.R.drawable.ic_dialog_alert)
-                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+        addLog("Loading channels...");
+        RestClient.Spotify client = RestClient.create(
+                RestClient.Spotify.class,
+                RestClient.Spotify.API_URL,
+                "Bearer " + AppConfig.getAccessToken(mContext)
+        );
+        client.getPlaylistsAsync(
+                AppConfig.getUsername(mContext),
+                50,
+                0,
+                new Callback<JsonElement>() {
+                    @Override
+                    public void success(JsonElement j, retrofit.client.Response response) {
+                        mPlaylists = new HashMap<>();
 
-                                public void onClick(DialogInterface dialog, int whichButton) {
-                                    if (ApplicationController.getDb().deleteChannel(channels.get(position).getId()))
-                                        updateChannelsList();
-                                    else
-                                        Toast.makeText(getApplicationContext(), "Unable to delete channel!", Toast.LENGTH_LONG).show();
-                                }})
-                            .setNegativeButton(android.R.string.no, null).show();
-                    }
-                });
+                        // TODO: page through playlists, we are only processing 1 page
 
-                List<SpotiriusChannel> syncChannels = ApplicationController.getDb().getSyncChannels();
-                if (syncChannels==null || syncChannels.isEmpty()) {
-                    addLog("All channels are up to date!");
-                } else {
-                    for (SpotiriusChannel c : syncChannels) {
-                        addLog(c.getPlaylistName()+" needs to be synced.");
+                        try {
+                            JsonArray items = j.getAsJsonObject().get("items").getAsJsonArray();
+                            for (JsonElement e : items) {
+                                mPlaylists.put(
+                                        e.getAsJsonObject().get("id").getAsString(),
+                                        e.getAsJsonObject().get("name").getAsString()
+                                );
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error parsing playlists, descriptions will not be shown");
+                        }
+
+                        final List<Channel> channels = AppConfig.getChannels(getApplicationContext());
+
+                        for (Channel channel : channels) {
+                            Log.d(TAG, channel.getPlaylistId() + ": " + channel.getChannel());
+                        }
+
+                        for (Channel channel : channels) {
+                            if (mPlaylists.containsKey(channel.getPlaylistId())) {
+                                Log.d(TAG, "Found playlist description");
+                                channel.setPlaylist(mPlaylists.get(channel.getPlaylistId()));
+                            }
+                        }
+                        ChannelsAdapter adapter = new ChannelsAdapter(mContext, (ArrayList)channels);
+                        final ListView listView = (ListView) findViewById(R.id.channelList);
+                        listView.setAdapter(adapter);
+                        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                            public void onItemClick(AdapterView<?> parent, View view,
+                                                    final int position, long id) {
+                                new AlertDialog.Builder(mContext)
+                                        .setTitle("Remove Channel")
+                                        .setMessage("Are you sure you want to delete channel " + channels.get(position).getChannel() + "?")
+                                        .setIcon(android.R.drawable.ic_dialog_alert)
+                                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+                                            public void onClick(DialogInterface dialog, int whichButton) {
+                                                AppConfig.deleteChannel(mContext, channels.get(position).getChannel());
+                                                updateChannelsList();
+                                            }
+                                        })
+                                        .setNegativeButton(android.R.string.no, null).show();
+                            }
+                        });
+                        addLog("Channels loaded, ready.");
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        addLog("Error loading channels: " + error.getMessage());
+                        Log.e(TAG, error.getUrl() + " " + error.getMessage());
                     }
                 }
-            }
-        });
+        );
     }
 
-    public class ChannelsAdapter extends ArrayAdapter<SpotiriusChannel> {
-        public ChannelsAdapter(Context context, ArrayList<SpotiriusChannel> channels) {
+    public class ChannelsAdapter extends ArrayAdapter<Channel> {
+        public ChannelsAdapter(Context context, ArrayList<Channel> channels) {
             super(context, 0, channels);
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             // Get the data item for this position
-            SpotiriusChannel channel = getItem(position);
+            Channel channel = getItem(position);
             // Check if an existing view is being reused, otherwise inflate the view
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.channel_row, parent, false);
@@ -437,7 +471,7 @@ public class MainActivity extends ActionBarActivity {
             TextView desc = (TextView) convertView.findViewById(R.id.item_desc);
             // Populate the data into the template view using the data object
             desc.setText("Satellite channel "+channel.getChannel());
-            title.setText(channel.getPlaylistName());
+            title.setText(channel.getPlaylist());
             // Return the completed view to render on screen
             return convertView;
         }

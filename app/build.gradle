@@ -31,5 +31,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:21.0.3'
     compile group: 'com.google.guava', name: 'guava', version: '18.0'
     compile 'com.spotify.sdk:spotify-auth:1.0.0-beta9@aar'
-    compile 'com.mcxiaoke.volley:library:1.0.+'
+    //compile 'com.mcxiaoke.volley:library:1.0.+'
+    compile 'com.squareup.okhttp:okhttp:2.4.0'
+    compile 'com.squareup.retrofit:retrofit:1.9.0'
 }
