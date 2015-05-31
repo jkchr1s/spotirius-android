@@ -56,7 +56,7 @@ public class MainActivity extends ActionBarActivity {
 
         mTextView = (TextView)findViewById(R.id.recent_activity);
 
-        mTextView.setText("Spotirius alpha 3 started."+EOL);
+        mTextView.setText("Spotirius alpha 4 started."+EOL);
 
         initMainActivity();
 
@@ -67,7 +67,7 @@ public class MainActivity extends ActionBarActivity {
         // if user is not logged in, we need to auth them
         if (!AppConfig.isValidSession(getApplicationContext())) {
             // user is not currently logged in
-            Toast.makeText(this, "Please log in to use Spotirius.", Toast.LENGTH_LONG).show();
+            addLog("No Spotify session found, please log in.");
             openLoginWindow();
             return;
         }
@@ -99,10 +99,11 @@ public class MainActivity extends ActionBarActivity {
                                     System.currentTimeMillis() / 1000 + j.getAsJsonObject().get("expires_in").getAsLong()
                             );
                             Log.d(TAG, "Token refreshed successfully");
-                            addLog("Login success...");
+                            addLog("Login success.");
                             updateChannelsList();
                         } catch (Exception e) {
                             Log.e(TAG, "error getting access token: " + e.getMessage());
+                            addLog("Error obtaining token, please log in again.");
                         }
                     }
 
@@ -110,6 +111,7 @@ public class MainActivity extends ActionBarActivity {
                     public void failure(RetrofitError error) {
                         Toast.makeText(mContext, error.getMessage(), Toast.LENGTH_SHORT).show();
                         Log.e(TAG, "Error getting access token: " + error.getMessage());
+                        addLog("Error obtaining token, please log in again.");
                     }
                 });
     }
@@ -130,7 +132,7 @@ public class MainActivity extends ActionBarActivity {
 
         switch(item.getItemId()) {
             case R.id.action_sync:
-                Toast.makeText(getApplicationContext(), "Sync started", Toast.LENGTH_SHORT).show();
+                addLog("Sync started. You can put this application in the background.");
                 Intent syncIntent = new Intent(this, SyncIntentService.class);
                 startService(syncIntent);
                 return true;
@@ -171,17 +173,18 @@ public class MainActivity extends ActionBarActivity {
                     case CODE:
                         mIsFirstLogin = true;
                         updateRefreshToken(response.getCode());
-                        initMainActivity();
                         break;
 
                     // Auth flow returned an error
                     case ERROR:
                         logStatus("Auth error: " + response.getError());
+                        addLog("Authentication error: " + response.getError());
                         break;
 
                     // Most likely auth flow was cancelled
                     default:
                         logStatus("Auth result: " + response.getType());
+                        addLog("Authentication error: "+response.getError());
                         finish();
                         break;
                 }
@@ -230,9 +233,9 @@ public class MainActivity extends ActionBarActivity {
                                     int i = 0;
                                     for (Map.Entry<String, String> item : mPlaylists.entrySet()) {
                                         if (i==which) {
-                                            Toast.makeText(mContext, item.getValue(), Toast.LENGTH_SHORT).show();
                                             AppConfig.addChannel(getApplicationContext(), new Channel(selectedChannel, item.getKey()));
-                                            Toast.makeText(getApplicationContext(), "Channel added", Toast.LENGTH_SHORT).show();
+                                            addLog("Added channel: " + selectedChannel);
+                                            addLog("Refreshing channel list...");
                                             updateChannelsList();
                                             break;
                                         } else {
@@ -267,7 +270,7 @@ public class MainActivity extends ActionBarActivity {
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
-                String value = input.getText().toString();
+                final String value = input.getText().toString();
                 Log.d(TAG, "Create playlist: "+value);
 
                 RestClient.Spotify client = RestClient.create(
@@ -287,15 +290,18 @@ public class MainActivity extends ActionBarActivity {
                         try {
                             AppConfig.addChannel(mContext, new Channel(String.valueOf(resultCode),
                                     j.getAsJsonObject().get("id").getAsString()));
+                            addLog("Created playlist: " + value);
                             updateChannelsList();
                         } catch (Exception e) {
                             Log.e(TAG, "Error creating playlist: "+e.getMessage());
+                            addLog("Error creating playlist: " + e.getMessage());
                         }
                     }
 
                     @Override
                     public void failure(RetrofitError error) {
                         Log.e(TAG, "Error sending request: "+ error.getMessage()+"\n"+error.getBody().toString());
+                        addLog("Error creating playlist: "+error.getMessage());
                     }
                 });
             }
@@ -326,8 +332,10 @@ public class MainActivity extends ActionBarActivity {
                             j.getAsJsonObject().get("id").getAsString()
                     );
                     mIsFirstLogin = false;
+                    updateChannelsList();
                 } catch (Exception e) {
                     Log.e(TAG, "Error parsing JSON response for me");
+                    logStatus("Cannot load Spotify user.");
                 }
             }
 
@@ -358,19 +366,26 @@ public class MainActivity extends ActionBarActivity {
                                     getApplicationContext(),
                                     j.getAsJsonObject().get("access_token").getAsString()
                             );
+                            AppConfig.setRefreshToken(
+                                    getApplicationContext(),
+                                    j.getAsJsonObject().get("refresh_token").getAsString()
+                            );
                             AppConfig.setExpiryTime(
                                     getApplicationContext(),
                                     System.currentTimeMillis() / 1000 + j.getAsJsonObject().get("expires_in").getAsLong()
                             );
-                            updateChannelsList();
+                            getMe();
                         } catch (Exception e) {
-                            Log.e(TAG, e.getMessage());
+                            Log.e(TAG, "Error parsing refresh token response: " + e.getMessage());
+                            addLog("Error parsing refresh token: "+e.getMessage());
                         }
                     }
 
                     @Override
                     public void failure(RetrofitError error) {
-                        Log.e(TAG, error.getMessage());
+                        Log.e(TAG, "Error getting refresh token: " + error.getMessage());
+                        Log.e(TAG, error.getUrl() + "\n" + error.getBody().toString());
+                        addLog("Error getting refresh token: "+error.getMessage());
                     }
                 });
     }
@@ -421,6 +436,11 @@ public class MainActivity extends ActionBarActivity {
                                 channel.setPlaylist(mPlaylists.get(channel.getPlaylistId()));
                             }
                         }
+
+                        if (channels.isEmpty()) {
+                            addLog("You do not have any channels. You can add channels by clicking the Menu button and selecting Add Channel.");
+                        }
+
                         ChannelsAdapter adapter = new ChannelsAdapter(mContext, (ArrayList)channels);
                         final ListView listView = (ListView) findViewById(R.id.channelList);
                         listView.setAdapter(adapter);
