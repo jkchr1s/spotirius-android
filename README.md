@@ -1,3 +1,6 @@
+# ALPHA 3 RELEASE
+Now it just needs UI love and automatic syncing! :)
+
 # spotirius-android
 Want to hear satellite radio playlists on the go? Spotirius syncs your Spotify playlists with ones from satellite radio!
 
