@@ -16,20 +16,23 @@ Click the menu button, add a channel or two, then click the menu and select *Syn
 
 
 #What's New
-* Add channel to new playlist
-* Add channel to existing playlist
-* Remove channel
-* Background sync (sync currently blocks app's UI thread)
 * No longer requires a Spotify Premium account
+* Switched from Volley to Retrofit
+* Removed sqlite, now checks Spotify playlist for duplicates
+
+
+#Fixes
+* Sync no longer blocks UI thread
+* Deduplicates based on Spotify playlist rather than local sqlite database
 
 
 #TODO
 * Better user interface
-* Background sync
+* Automatic background sync
 * Blacklist artists you don't want to hear
 * Automatically remove songs after given amount of time to keep playlists "fresh"
 
 
 
 #Thanks
-This project uses Google Volley and the Spotify Android SDK (beta 9 at the moment). Also thank you to http://www.dogstarradio.com for providing satellite radio playlists!
+This project uses Retrofit and the Spotify Android SDK (beta 9 at the moment). Also thank you to http://www.dogstarradio.com for providing satellite radio playlists!
