@@ -1,8 +1,10 @@
 package com.booshaday.spotirius.service;
 
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -50,10 +52,13 @@ public class SyncService {
     private Intent mIntent;
     private boolean finished = false;
     private RestClient mSpotify;
+    private NotificationManager mNotificationManager;
+    private NotificationCompat.Builder mBuilder;
 
-    public SyncService(Context context, Intent intent) {
+    public SyncService(Context context, NotificationManager manager, NotificationCompat.Builder builder) {
         this.mContext = context;
-        this.mIntent = intent;
+        this.mNotificationManager = manager;
+        this.mBuilder = builder;
     }
 
     public JsonElement addTracks(String playlistId, String uris) {
@@ -208,6 +213,7 @@ public class SyncService {
             Log.d(TAG, String.format("Processing playlists for channel: %s, page: %d", channel, nextPage));
             Response response = client.getPlaylist("", "", channel, month, date, "", "", "", "", "", nextPage);
             String body = new String(((TypedByteArray) response.getBody()).getBytes());
+            updateNotification("Loading songs from DogStarRadio...");
 
             // see if we have another page to process
             Matcher m = REGEX_CHANNEL_NEXT_PAGE.matcher(body);
@@ -256,6 +262,7 @@ public class SyncService {
                         JsonObject o = t.getAsJsonObject();
                         s.setUri(o.get("tracks").getAsJsonObject().get("items").getAsJsonArray().get(0).getAsJsonObject().get("uri").getAsString());
                         Log.d(TAG, String.format("FOUND: artist: %s, track: %s, uri: %s", s.getArtist(), s.getTitle(), s.getUri()));
+                        updateNotification(String.format("Found %s - %s", s.getArtist(), s.getTitle()));
 
                         // add to playlist for de-duplication
                         playlist.add(s);
@@ -283,6 +290,7 @@ public class SyncService {
 
         // push any existing songs to spotify
         if (newTracks.size()>0) {
+            updateNotification("Adding tracks to playlist...");
             publishTracksToPlaylist(newTracks, playlistId);
             // empty array list
             newTracks.clear();
@@ -431,6 +439,13 @@ public class SyncService {
                 "Bearer " + AppConfig.getAccessToken(mContext)
         );
         return client.getSearchResults(parameters, type, market, limit);
+    }
+
+    private void updateNotification(String text) {
+        if (mNotificationManager!=null && mBuilder!=null) {
+            mBuilder.setContentText(text);
+            mNotificationManager.notify(SyncIntentService.NOTIFICATION_ID, mBuilder.build());
+        }
     }
 
 

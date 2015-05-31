@@ -56,7 +56,7 @@ public class MainActivity extends ActionBarActivity {
 
         mTextView = (TextView)findViewById(R.id.recent_activity);
 
-        mTextView.setText("Spotirius alpha 4 started."+EOL);
+        mTextView.setText("Spotirius alpha 5 started."+EOL);
 
         initMainActivity();
 
