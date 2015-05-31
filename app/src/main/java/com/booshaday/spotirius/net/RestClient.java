@@ -116,7 +116,7 @@ public class RestClient {
                                       @Query("offset") int offset);
 
         @FormUrlEncoded
-        @POST("/authorize")
+        @POST("/api/token")
         JsonElement getAccessToken(@Field("client_id") String clientId,
                                    @Field("client_secret") String clientSecret,
                                    @Field("grant_type") String grantType,
@@ -124,7 +124,7 @@ public class RestClient {
                                    @Field("redirect_uri") String redirectUri);
 
         @FormUrlEncoded
-        @POST("/authorize")
+        @POST("/api/token")
         void getAccessTokenAsync(@Field("client_id") String clientId,
                                  @Field("client_secret") String clientSecret,
                                  @Field("grant_type") String grantType,
