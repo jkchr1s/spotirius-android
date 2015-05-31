@@ -1,8 +1,6 @@
-![alt tag](http://i.imgur.com/qv25PJf.png)
-![alt tag](http://i.imgur.com/EuyRXGI.png)
-![alt tag](http://i.imgur.com/VmcfB7o.png)
+![alt tag](http://i.imgur.com/qv25PJf.png) ![alt tag](http://i.imgur.com/EuyRXGI.png) ![alt tag](http://i.imgur.com/VmcfB7o.png)
 
-# ALPHA 4 RELEASE
+# ALPHA 5 RELEASE
 Now it just needs UI love and automatic syncing! :)
 
 # spotirius-android
