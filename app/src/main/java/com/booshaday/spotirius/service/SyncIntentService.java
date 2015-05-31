@@ -23,10 +23,11 @@ public class SyncIntentService extends IntentService {
     private static final int STATUS_RUNNING = 0;
     private static final int STATUS_FINISHED = 1;
     private static final int STATUS_ERROR = 2;
-    private final int NOTIFICATION_ID = 1000;
+    public static final int NOTIFICATION_ID = 1000;
 
     private Intent mIntent;
     private NotificationManager mNotificationManager;
+    private NotificationCompat.Builder mBuilder;
 
     /**
      * Creates an IntentService.  Invoked by your subclass's constructor.
@@ -48,7 +49,7 @@ public class SyncIntentService extends IntentService {
         this.mIntent = intent;
 
         // show notification
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+        mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(android.R.drawable.stat_notify_sync)
                 .setContentTitle("Spotirius Sync")
                 .setContentText("Playlist sync in progress...");
@@ -60,7 +61,7 @@ public class SyncIntentService extends IntentService {
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mNotificationManager.notify(NOTIFICATION_ID, notification);
 
-        SyncService service = new SyncService(this, null);
+        SyncService service = new SyncService(this, mNotificationManager, mBuilder);
 
         try {
             service.refreshToken();
@@ -81,6 +82,9 @@ public class SyncIntentService extends IntentService {
         try {
             List<Channel> channels = AppConfig.getChannels(this);
             for (Channel c : channels) {
+                mBuilder.setContentTitle("Spotirius Sync: Channel "+c.getChannel());
+                mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+
                 // get the existing playlist for the channel
                 List<Song> playlist = service.getPlaylistTracks(c.getPlaylistId());
                 Log.d(TAG, String.format("playlist for channel %s contains %d songs", c.getChannel(), playlist.size()));
