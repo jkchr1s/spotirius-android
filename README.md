@@ -1,4 +1,4 @@
-# ALPHA 3 RELEASE
+# ALPHA 4 RELEASE
 Now it just needs UI love and automatic syncing! :)
 
 # spotirius-android
