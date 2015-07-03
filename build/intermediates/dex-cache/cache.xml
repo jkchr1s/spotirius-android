@@ -9,6 +9,20 @@
         <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/retrofit-1.9.0-364424b99466cd0767b8956cea0acccff8d3d38e.jar" />
     </item>
     <item
+        jar="/Users/chris/Library/Android/sdk/extras/android/m2repository/com/android/support/support-annotations/21.0.3/support-annotations-21.0.3.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="4b74cefe1f0c1b819e7260c8627a14674e37fd35">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/support-annotations-21.0.3-2d43dc2250fa073403a4b71cb7c0bd8397ce0017.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/classes.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-5998b9a5686fb009c5828c6cf4fc0bb53b51665a.jar" />
+    </item>
+    <item
         jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.spotify.sdk/spotify-auth/1.0.0-beta10/classes.jar"
         jumboMode="false"
         revision="21.1.2"
@@ -37,13 +51,6 @@
         <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/guava-18.0-2f91672a3a817e5b9d7c3358ba9fd3c6c6789d9f.jar" />
     </item>
     <item
-        jar="/Users/chris/Library/Android/sdk/extras/android/m2repository/com/android/support/support-annotations/21.0.3/support-annotations-21.0.3.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="4b74cefe1f0c1b819e7260c8627a14674e37fd35">
-        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/support-annotations-21.0.3-2d43dc2250fa073403a4b71cb7c0bd8397ce0017.jar" />
-    </item>
-    <item
         jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.3.1/ecb6e1f8e4b0e84c4b886c2f14a1500caf309757/gson-2.3.1.jar"
         jumboMode="false"
         revision="21.1.2"
@@ -56,13 +63,6 @@
         revision="21.1.2"
         sha1="5b72bf48563ea8410e650de14aa33ff69a3e8c35">
         <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/okio-1.4.0-5b44cd5a98a65a3e0e75df750dcb38ae816dbcae.jar" />
-    </item>
-    <item
-        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/classes.jar"
-        jumboMode="false"
-        revision="21.1.2"
-        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
-        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-5998b9a5686fb009c5828c6cf4fc0bb53b51665a.jar" />
     </item>
     <item
         jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.makeramen/roundedimageview/2.0.1/classes.jar"
