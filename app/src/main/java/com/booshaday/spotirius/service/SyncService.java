@@ -6,13 +6,21 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.booshaday.spotirius.MainActivity;
+import com.booshaday.spotirius.R;
 import com.booshaday.spotirius.data.AppConfig;
+import com.booshaday.spotirius.data.Channel;
 import com.booshaday.spotirius.data.Constants;
 import com.booshaday.spotirius.data.Song;
 import com.booshaday.spotirius.net.RestClient;
+import com.booshaday.spotirius.view.ChannelManagerActivity;
 import com.booshaday.spotirius.view.ChannelPickerActivity;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -44,7 +52,7 @@ public class SyncService {
     private static final Pattern REGEX_SONG_LIST = Pattern.compile("<tr><td>(\\d+)<\\/td><td>(.*)<\\/td><td><a.*\">(.*)<\\/a><\\/td><td>\\d+\\/\\d+\\/\\d+<\\/td><td>\\d+\\:\\d+\\:\\d+ [A|P]M<\\/td><\\/tr>");
     private static final Pattern REGEX_TRACK_URI = Pattern.compile(".*\\\"uri\\\" \\: \\\"(spotify\\:track:.*)\\\".*");
     private static final Pattern REGEX_PAGE_OFFSET = Pattern.compile("offset=(\\d+)");
-    private static final String TAG = "RestService";
+    private static final String TAG = "SyncService";
     private static final int SPOTIFY_RATELIMIT_MILLIS = 100;
     private static final int SPOTIFY_TRACK_ADD_BATCH_SIZE = 100;
 
@@ -154,7 +162,7 @@ public class SyncService {
                         bundle.putStringArrayList("channels", channels);
                         Intent intent = new Intent(context, ChannelPickerActivity.class);
                         intent.putExtras(bundle);
-                        ((MainActivity) context).startActivityForResult(intent, Constants.ADD_CHANNELS_RESULT);
+                        ((ChannelManagerActivity) context).startActivityForResult(intent, Constants.ADD_CHANNELS_RESULT);
                     }
                 }
             }
@@ -211,7 +219,11 @@ public class SyncService {
         // loop until we quit receiving next page
         while (nextPage > 0) {
             Log.d(TAG, String.format("Processing playlists for channel: %s, page: %d", channel, nextPage));
+            updateHeading(String.format("Syncing Channel: %s", channel));
             Response response = client.getPlaylist("", "", channel, month, date, "", "", "", "", "", nextPage);
+            if (response.getStatus()!=200) {
+                updateNotification("Error: Received http "+String.valueOf(response.getStatus())+" trying to read from "+response.getUrl());
+            }
             String body = new String(((TypedByteArray) response.getBody()).getBytes());
             updateNotification("Loading songs from DogStarRadio...");
 
@@ -239,7 +251,7 @@ public class SyncService {
                 // deduplicate
                 boolean found = false;
                 for (Song song : playlist) {
-                    if (song.equals(s)) {
+                    if (song.getArtist().equalsIgnoreCase(s.getArtist()) && song.getTitle().equalsIgnoreCase(s.getTitle())) {
                         found = true;
                         break;
                     }
@@ -261,16 +273,28 @@ public class SyncService {
                         JsonElement t = spotify.getSearchResults(params, "track", "from_token", 1);
                         JsonObject o = t.getAsJsonObject();
                         s.setUri(o.get("tracks").getAsJsonObject().get("items").getAsJsonArray().get(0).getAsJsonObject().get("uri").getAsString());
-                        Log.d(TAG, String.format("FOUND: artist: %s, track: %s, uri: %s", s.getArtist(), s.getTitle(), s.getUri()));
-                        updateNotification(String.format("Found %s - %s", s.getArtist(), s.getTitle()));
 
-                        // add to playlist for de-duplication
-                        playlist.add(s);
+                        // try to deduplicate again
+                        for (Song song : playlist) {
+                            if (song.getUri().equals(s.getUri())) {
+                                found = true;
+                                break;
+                            }
+                        }
 
-                        // add to new tracks queue
-                        newTracks.add(s.getUri());
+                        if (!found) {
+                            Log.d(TAG, String.format("FOUND: artist: %s, track: %s, uri: %s", s.getArtist(), s.getTitle(), s.getUri()));
+                            updateNotification(String.format("Found %s - %s", s.getArtist(), s.getTitle()));
+
+                            // add to playlist for de-duplication
+                            playlist.add(s);
+
+                            // add to new tracks queue
+                            newTracks.add(s.getUri());
+                        }
                     } catch (Exception e) {
                         Log.w(TAG, String.format("NOT FOUND: artist: %s, track: %s", s.getArtist(), s.getTitle()));
+                        updateNotification("Not found: "+s.getArtist()+" - "+s.getTitle());
                     } finally {
                         // pause to help with rate limiting
                         try {
@@ -284,6 +308,9 @@ public class SyncService {
                         // empty array list
                         newTracks.clear();
                     }
+                } else {
+                    Log.d(TAG, "Found duplicate song: "+s.getArtist()+" - "+s.getTitle());
+                    updateNotification("Found duplicate song: "+s.getArtist()+" - "+s.getTitle());
                 }
             }
         }
@@ -297,6 +324,7 @@ public class SyncService {
         }
 
         Log.d(TAG, String.format("FINISHED PLAYLIST PARSE: %s", channel));
+        updateHeading(String.format("Finished: Channel %s", channel));
         return playlist;
     }
 
@@ -445,6 +473,28 @@ public class SyncService {
         if (mNotificationManager!=null && mBuilder!=null) {
             mBuilder.setContentText(text);
             mNotificationManager.notify(SyncIntentService.NOTIFICATION_ID, mBuilder.build());
+        }
+
+        // try to update the gui
+        try {
+            Intent intent = new Intent();
+            intent.setAction("com.booshaday.spotirius.SyncProgress");
+            intent.putExtra("syncStatus", text);
+            mContext.sendBroadcast(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateHeading(String text) {
+        // try to update the gui
+        try {
+            Intent intent = new Intent();
+            intent.setAction("com.booshaday.spotirius.SyncProgress");
+            intent.putExtra("syncHeading", text);
+            mContext.sendBroadcast(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

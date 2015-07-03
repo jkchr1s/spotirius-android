@@ -1,47 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.booshaday.spotirius" >
+
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme">
-
+        android:theme="@style/AppTheme" >
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name" >
+
+        </activity>
+        <activity android:name=".view.ChannelPickerActivity" />
+        // boot receiver
+        <receiver
+            android:name=".service.BootReceiver"
+            android:enabled="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        // alarm receiver
+        <receiver android:name=".service.SyncAlarmReceiver" />
+        // sync service
+        <service android:name=".service.SyncIntentService" />
+        // spotify login
+        <activity
+            android:name="com.spotify.sdk.android.authentication.LoginActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name=".WelcomeActivity"
+            android:label="@string/title_activity_welcome" >
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.VIEW" />
 
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
                 // this needs to match the scheme and host of the redirect URI as defined in My applications page
                 <data
                     android:host="callback"
-                    android:scheme="spotirius-login"/>
+                    android:scheme="spotirius-login" />
             </intent-filter>
-
         </activity>
 
-        <activity android:name=".view.ChannelPickerActivity" />
-
-        // sync service
-        <service android:name=".service.SyncIntentService" />
-
-        // spotify login
-        <activity
-            android:name="com.spotify.sdk.android.authentication.LoginActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+        <activity android:name=".view.ChannelManagerActivity" />
     </application>
 
 </manifest>

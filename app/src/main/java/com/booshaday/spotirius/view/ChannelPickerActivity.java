@@ -1,15 +1,20 @@
 package com.booshaday.spotirius.view;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.booshaday.spotirius.R;
+import com.booshaday.spotirius.data.Channel;
 import com.booshaday.spotirius.data.Constants;
 
 import java.util.ArrayList;
@@ -20,7 +25,8 @@ import java.util.ArrayList;
 public class ChannelPickerActivity extends Activity {
     private ListView mListView;
     private ArrayList<String> mChannels;
-    private ArrayAdapter<String> mListViewAdapter;
+//    private ArrayAdapter<String> mListViewAdapter;
+    private ChannelsAdapter mListViewAdapter;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,7 +37,10 @@ public class ChannelPickerActivity extends Activity {
         mChannels = bundle.getStringArrayList("channels");
 
         mListView = (ListView) findViewById(R.id.channel_picker_listview);
-        mListViewAdapter = new ArrayAdapter<>(this, R.layout.channel_picker_row, items);
+//        mListViewAdapter = new ArrayAdapter<>(this, R.layout.channel_picker_row, items);
+        mListViewAdapter = new ChannelsAdapter(this, items);
+
+
         mListView.setAdapter(mListViewAdapter);
 
         mListView.setClickable(true);
@@ -44,5 +53,29 @@ public class ChannelPickerActivity extends Activity {
                 finish();
             }
         });
+    }
+
+    private class ChannelsAdapter extends ArrayAdapter<String> {
+        public ChannelsAdapter(Context context, ArrayList<String> channels) {
+            super(context, 0, channels);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            // Get the data item for this position
+            String channel = getItem(position);
+            // Check if an existing view is being reused, otherwise inflate the view
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.channel_row, parent, false);
+            }
+            // Lookup view for data population
+            TextView title = (TextView) convertView.findViewById(R.id.item_title);
+            TextView desc = (TextView) convertView.findViewById(R.id.item_desc);
+            // Populate the data into the template view using the data object
+            desc.setText("Found on DogStarRadio.com");
+            title.setText(channel);
+            // Return the completed view to render on screen
+            return convertView;
+        }
     }
 }
