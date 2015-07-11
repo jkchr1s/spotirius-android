@@ -1,9 +1,12 @@
 package com.booshaday.spotirius;
 
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,7 +26,9 @@ import com.booshaday.spotirius.data.AppConfig;
 import com.booshaday.spotirius.data.Channel;
 import com.booshaday.spotirius.data.Constants;
 import com.booshaday.spotirius.net.RestClient;
+import com.booshaday.spotirius.service.SyncAlarmReceiver;
 import com.booshaday.spotirius.service.SyncIntentService;
+import com.booshaday.spotirius.service.SyncProgressReceiver;
 import com.booshaday.spotirius.service.SyncService;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -47,7 +52,8 @@ public class MainActivity extends ActionBarActivity {
     private boolean mIsFirstLogin = false;
     private Map<String, String> mPlaylists;
     private TextView mTextView;
-
+    private IntentFilter mIntentFilter;
+    private SyncProgressReceiver mSyncProgressReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +63,11 @@ public class MainActivity extends ActionBarActivity {
         mTextView = (TextView)findViewById(R.id.recent_activity);
 
         mTextView.setText("Spotirius alpha 5 started."+EOL);
+
+        // set up intentfilter for sync progress
+        mIntentFilter = new IntentFilter("com.booshaday.spotirius.SyncProgress");
+        mSyncProgressReceiver = new SyncProgressReceiver(mTextView);
+        registerReceiver(mSyncProgressReceiver, mIntentFilter);
 
         initMainActivity();
 
@@ -147,10 +158,30 @@ public class MainActivity extends ActionBarActivity {
                 return true;
 
             case R.id.action_settings:
+                Intent intent = new Intent(this, WelcomeActivity.class);
+                startActivity(intent);
                 return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();  // Always call the superclass method first
+
+        Log.d(TAG, "unregistering broadcast receiver");
+        unregisterReceiver(mSyncProgressReceiver);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        Log.d(TAG, "reregistering broadcast receiver");
+        registerReceiver(mSyncProgressReceiver, mIntentFilter);
+
+
     }
 
     private void openLoginWindow() {

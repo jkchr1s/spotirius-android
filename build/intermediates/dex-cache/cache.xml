@@ -23,11 +23,11 @@
         <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-5998b9a5686fb009c5828c6cf4fc0bb53b51665a.jar" />
     </item>
     <item
-        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.spotify.sdk/spotify-auth/1.0.0-beta9/classes.jar"
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.spotify.sdk/spotify-auth/1.0.0-beta10/classes.jar"
         jumboMode="false"
         revision="21.1.2"
-        sha1="ce48e0e9dcaaba897077f28799eb564516430920">
-        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-7b32a88ba8fa7986feb1d87017c7cc87e6d0ba94.jar" />
+        sha1="a2736a2c8e3bd1d508baa11851e9a77f62646d08">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-f309edb49b223a07ade2add7fc780d13282bd595.jar" />
     </item>
     <item
         jar="/Users/chris/.gradle/caches/modules-2/files-2.1/com.squareup.okhttp/okhttp/2.4.0/40340c0748190fe897baf7bffbc1b282734294e5/okhttp-2.4.0.jar"
@@ -63,6 +63,13 @@
         revision="21.1.2"
         sha1="5b72bf48563ea8410e650de14aa33ff69a3e8c35">
         <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/okio-1.4.0-5b44cd5a98a65a3e0e75df750dcb38ae816dbcae.jar" />
+    </item>
+    <item
+        jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.makeramen/roundedimageview/2.0.1/classes.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="2abde49a8d53539fa902ab5b8d29698023b262dd">
+        <dex dex="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/pre-dexed/debug/classes-d2e44b141dd6ac882314c5967f6be293fceefcab.jar" />
     </item>
     <item
         jar="/Users/chris/AndroidStudioProjects/Spotirius/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/libs/internal_impl-21.0.3.jar"

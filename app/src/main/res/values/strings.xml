@@ -14,4 +14,41 @@
     <string name="session_expired">Your Spotirius session has expired. Please launch the app and log in again.</string>
     <string name="session_problem">There is a problem with your Spotirius login. Please launch the app and log in again.</string>
 
+    <string name="title_activity_welcome">Spotirius (beta)</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="title_activity_home">HomeActivity</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_please_login">Please login to use Spotirius.</string>
+    <string name="toast_authentication_error">Authentication error. Please relaunch Spotirius and try again.</string>
+    <string name="toast_network_unavailable">Unable to connect to the internet. Please connect and relaunch Spotirius.</string>
+    <string name="toast_network_unavailable_retry">Unable to connect to the internet. Please connect to the network and try again.</string>
+
+    <!-- Welcome Activity strings -->
+    <string name="heading_logged_in">Logged In</string>
+    <string name="heading_sync_started">Sync Started</string>
+    <string name="heading_sync_finished">Sync Finished</string>
+
+    <string name="status_logging_in">Logging in…</string>
+    <string name="status_sync_not_running">Ready to sync.</string>
+    <string name="status_sync_running">Sync in progress.</string>
+
+    <string name="no_channels_status">No channels flagged for sync.</string>
+    <string name="no_channels_status_desc">You do not have any channels flagged for sync. Please use Manage Channels to add your favorites.</string>
+
+    <string name="sync_now">Sync Now</string>
+    <string name="sync_now_running">Sync In Progress</string>
+    <string name="sync_now_desc">Starts syncing the selected channels in the background.</string>
+    <string name="sync_strict">Strict searching (fewer matches, but fewer incorrect results)</string>
+
+    <string name="manage_channels">Manage Channels</string>
+    <string name="manage_channels_desc">Add or remove a satellite radio channel.</string>
+
+    <string name="log_out">Log Out</string>
+    <string name="log_out_desc">Log out of Spotify.</string>
+
+    <!-- Channel Manager strings -->
+    <string name="button_add_channel">Add Channel</string>
+
 </resources>

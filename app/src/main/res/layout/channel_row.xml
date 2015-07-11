@@ -8,13 +8,17 @@
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:id="@+id/item_title"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Title" />
+        android:textColor="#ffffff"
+        android:textStyle="bold"
+        android:text="" />
+    <!-- #bac6c6 -->
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Small Text"
+        android:textColor="#bac6c6"
+        android:text=""
         android:id="@+id/item_desc" />
 
 

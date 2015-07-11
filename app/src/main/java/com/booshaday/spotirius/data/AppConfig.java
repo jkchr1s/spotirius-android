@@ -3,6 +3,7 @@ package com.booshaday.spotirius.data;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Base64;
+import android.util.Log;
 
 import com.booshaday.spotirius.R;
 import com.google.gson.Gson;
@@ -27,6 +28,7 @@ public final class AppConfig {
     public static final String DOG_BASE_URL = "http://www.dogstarradio.com";
     public static final String DOG_SEARCH_URI = "/search_playlist.php";
     public static final String DOG_SEARCH_ARGS = "?artist=&title=&channel=%s&month=%d&date=%d&shour=&sampm=&stz=&ehour=&eampm=";
+    private static final String TAG = "AppConfig";
 
 
     public static String getSpotifyClientAuth() {
@@ -117,6 +119,26 @@ public final class AppConfig {
                 }
             }
         }
+        String json = new Gson().toJson(channels);
+
+        SharedPreferences prefs = context.getSharedPreferences(context.getResources().getString(R.string.prefs_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("channels", json);
+        editor.commit();
+    }
+
+    public static void updateChannelSyncTimestamp(Context context, String channel) {
+        if (channel==null) return;
+        Log.d(TAG, "Updating channel sync timestamp: "+channel);
+
+        List<Channel> channels = getChannels(context);
+
+        for (Channel c : channels) {
+            if (c.getChannel().equals(channel)) {
+                c.setLastSync(System.currentTimeMillis());
+            }
+        }
+
         String json = new Gson().toJson(channels);
 
         SharedPreferences prefs = context.getSharedPreferences(context.getResources().getString(R.string.prefs_key), Context.MODE_PRIVATE);

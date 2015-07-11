@@ -10,6 +10,7 @@ public class Channel {
     private String channel;
     private String playlistId;
     private String playlist;
+    private long lastSync;
 
     public Channel(String channel, String playlistId) {
         this.channel = channel;
@@ -38,5 +39,13 @@ public class Channel {
 
     public void setPlaylist(String playlist) {
         this.playlist = playlist;
+    }
+
+    public long getLastSync() {
+        return lastSync;
+    }
+
+    public void setLastSync(long lastSync) {
+        this.lastSync = lastSync;
     }
 }
