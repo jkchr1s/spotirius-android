@@ -96,7 +96,7 @@ public class WelcomeActivity extends Activity {
             return;
         } else {
             // log in from saved session
-            mClient.getMe();
+            mClient.restoreSession();
 
             if (isSyncRunning()) {
                 mStatusText.setText(getString(R.string.status_sync_running));

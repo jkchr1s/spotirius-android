@@ -3,9 +3,9 @@ package com.booshaday.spotirius.net;
 import android.util.Log;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.squareup.okhttp.OkHttpClient;
 
-import java.util.List;
 import java.util.Map;
 
 import retrofit.Callback;
@@ -79,8 +79,7 @@ public class RestClient {
         @POST("/users/{username}/playlists/{playlistId}/tracks")
         JsonElement addTracks(@Path("username") String username,
                               @Path("playlistId") String playlistId,
-                              @Query("uris") String uris,
-                              @Body String body);
+                              @Body JsonObject body);
 
         @FormUrlEncoded
         @POST("/users/{username}/playlists")

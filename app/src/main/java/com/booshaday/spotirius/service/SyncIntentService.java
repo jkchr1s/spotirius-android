@@ -94,6 +94,13 @@ public class SyncIntentService extends IntentService {
             try {
                 List<Channel> channels = AppConfig.getChannels(this);
                 for (Channel c : channels) {
+                    // see if the channel has been synced in the past day
+                    Log.d(TAG, String.format("Channel %s last sync: %d", c.getChannel(), c.getLastSync()));
+                    if (c.getLastSync() > 0 && System.currentTimeMillis() - c.getLastSync() < 86400000) {
+                        Log.d(TAG, String.format("Channel %s was synced recently, skipping to next channel", c.getChannel()));
+                        continue;
+                    }
+
                     mBuilder.setContentTitle("Spotirius Sync: Channel "+c.getChannel());
                     mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
 
@@ -103,6 +110,10 @@ public class SyncIntentService extends IntentService {
 
                     // start sync
                     service.getChannelPlaylist(playlist, cal.get(Calendar.MONTH)+1, cal.get(Calendar.DATE), c.getChannel(), c.getPlaylistId());
+
+                    // update last sync time
+                    Log.d(TAG, String.format("Updating sync timestamp: %s", c.getChannel()));
+                    AppConfig.updateChannelSyncTimestamp(this, c.getChannel());
                 }
 
             } catch (Exception e) {

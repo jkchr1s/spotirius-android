@@ -25,6 +25,7 @@ import com.booshaday.spotirius.view.ChannelPickerActivity;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,6 +52,7 @@ public class SyncService {
     private static final Pattern REGEX_NEXT_PAGE = Pattern.compile(".*<a href=(.*)>Next<br>Page<\\/a>.*");
     private static final Pattern REGEX_SONG_LIST = Pattern.compile("<tr><td>(\\d+)<\\/td><td>(.*)<\\/td><td><a.*\">(.*)<\\/a><\\/td><td>\\d+\\/\\d+\\/\\d+<\\/td><td>\\d+\\:\\d+\\:\\d+ [A|P]M<\\/td><\\/tr>");
     private static final Pattern REGEX_TRACK_URI = Pattern.compile(".*\\\"uri\\\" \\: \\\"(spotify\\:track:.*)\\\".*");
+    private static final Pattern REGEX_TITLE_WITH_YEAR = Pattern.compile("^(.*?)(\\ \\(\\d+\\))?$");
     private static final Pattern REGEX_PAGE_OFFSET = Pattern.compile("offset=(\\d+)");
     private static final String TAG = "SyncService";
     private static final int SPOTIFY_RATELIMIT_MILLIS = 100;
@@ -69,13 +71,13 @@ public class SyncService {
         this.mBuilder = builder;
     }
 
-    public JsonElement addTracks(String playlistId, String uris) {
+    public JsonElement addTracks(String playlistId, JsonObject uris) {
         RestClient.Spotify client = RestClient.create(
                 RestClient.Spotify.class,
                 RestClient.Spotify.API_URL,
                 "Bearer " + AppConfig.getAccessToken(mContext)
         );
-        return client.addTracks(AppConfig.getUsername(mContext), playlistId, uris, "");
+        return client.addTracks(AppConfig.getUsername(mContext), playlistId, uris);
     }
 
     public JsonElement createPlaylist(String name, Boolean isPublic) {
@@ -246,7 +248,15 @@ public class SyncService {
             // scrape songs off the page
             m = REGEX_CHANNEL_SONGS.matcher(body);
             while (m.find()) {
-                Song s = new Song(m.group(2), m.group(3));
+                String title = m.group(3);
+
+                // if the title of the track contains the year at the end, remove it
+                Matcher removeYearFromTitle = REGEX_TITLE_WITH_YEAR.matcher(m.group(3));
+                if (removeYearFromTitle.find()) {
+                    title = removeYearFromTitle.group(1);
+                }
+
+                Song s = new Song(m.group(2), title);
 
                 // deduplicate
                 boolean found = false;
@@ -329,20 +339,16 @@ public class SyncService {
     }
 
     private void publishTracksToPlaylist(List<String> newTracks, String playlistId) {
-        // flatten list to comma separated string
-        String uris = "";
+        JsonObject tracks = new JsonObject();
+        JsonArray trackList = new JsonArray();
         for (String uri : newTracks) {
-            uris += uri + ",";
+            trackList.add(new JsonPrimitive(uri));
         }
-
-        // strip last comma
-        if (uris.length()> 0) {
-            uris = uris.substring(0, uris.length()-1);
-        }
+        tracks.add("uris", trackList);
 
         // send to playlist
         try {
-            addTracks(playlistId, uris);
+            addTracks(playlistId, tracks);
             Log.d(TAG, String.format("Added %d tracks to %s", newTracks.size(), playlistId));
         } catch (Exception e) {
             Log.e(TAG, "Error submitting tracks to playlist");

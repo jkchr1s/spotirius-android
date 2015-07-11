@@ -71,6 +71,45 @@ public class GuiNetworkClient {
         }
     }
 
+    public void restoreSession() {
+        RestClient.Spotify client = RestClient.create(
+                RestClient.Spotify.class,
+                RestClient.Spotify.ACCOUNTS_URL,
+                null
+        );
+
+        client.getRefreshTokenAsync(
+                Constants.SPOTIFY_CLIENT_ID,
+                Constants.SPOTIFY_CLIENT_SECRET,
+                "refresh_token",
+                AppConfig.getRefreshToken(mContext),
+                new Callback<JsonElement>() {
+
+            @Override
+            public void success(JsonElement j, retrofit.client.Response response) {
+                AppConfig.setAccessToken(
+                        mContext,
+                        j.getAsJsonObject().get("access_token").getAsString()
+                );
+                AppConfig.setExpiryTime(
+                        mContext,
+                        System.currentTimeMillis() / 1000 + j.getAsJsonObject().get("expires_in").getAsLong()
+                );
+
+                getMe();
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+                Log.e(TAG, error.getMessage());
+                Toast.makeText(mContext, "Error refreshing token", Toast.LENGTH_LONG).show();
+                if (mContext != null && mContext instanceof WelcomeActivity) {
+                    ((WelcomeActivity)mContext).finish();
+                }
+            }
+        });
+    }
+
     public void getMe() {
         RestClient.Spotify client = RestClient.create(
                 RestClient.Spotify.class,
