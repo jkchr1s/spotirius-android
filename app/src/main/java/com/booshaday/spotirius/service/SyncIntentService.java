@@ -52,6 +52,13 @@ public class SyncIntentService extends IntentService {
         if (isNetworkAvailable()) {
             this.mIntent = intent;
 
+            try {
+                AppConfig.updateLastSync(this);
+                Log.d(TAG, "Updated last sync time");
+            } catch (Exception e) {
+                Log.e(TAG, "Unable to update last sync time: "+e.getMessage());
+            }
+
             // show notification
             mBuilder = new NotificationCompat.Builder(this)
                     .setSmallIcon(android.R.drawable.stat_notify_sync)

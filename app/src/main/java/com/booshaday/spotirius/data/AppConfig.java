@@ -41,6 +41,25 @@ public final class AppConfig {
         }
     }
 
+    public static long getLastSync(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(context.getResources().getString(R.string.prefs_key), Context.MODE_PRIVATE);
+        return prefs.getLong("last_sync", 0);
+    }
+
+    public static void updateLastSync(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(context.getResources().getString(R.string.prefs_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong("last_sync", System.currentTimeMillis());
+        editor.commit();
+    }
+
+    public static void resetLastSync(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(context.getResources().getString(R.string.prefs_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong("last_sync", 0);
+        editor.commit();
+    }
+
     public static String getUsername(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(context.getResources().getString(R.string.prefs_key), Context.MODE_PRIVATE);
         return prefs.getString("spotify_user", "");
@@ -106,6 +125,10 @@ public final class AppConfig {
         SharedPreferences prefs = context.getSharedPreferences(context.getResources().getString(R.string.prefs_key), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("channels", json);
+
+        // also set a flag to clear last auto sync time
+        editor.putLong("last_sync", 0);
+
         editor.commit();
     }
 
