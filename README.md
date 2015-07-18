@@ -2,6 +2,7 @@
 
 # BETA 3
 Now with background sync!
+APK: [download](https://github.com/jkchr1s/spotirius-android/blob/master/app/app-release.apk?raw=true)
 
 # spotirius-android
 Want to hear satellite radio playlists on the go? Spotirius syncs your Spotify playlists with ones from satellite radio!
